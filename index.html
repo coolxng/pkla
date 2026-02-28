@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weekly Market Summary – Feb 24–Feb 28, 2026</title>
+<title>Weekly Market Summary – Feb 23–Feb 27, 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -27,18 +27,13 @@
     font-weight: 300;
     line-height: 1.65;
   }
-  /* Custom Scrollbar */
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-  /* ─── MASTHEAD ─── */
   .masthead { padding: 52px 64px 40px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
-  .masthead::before {
-    content: ''; position: absolute; top: -80px; right: -100px; width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(232,200,74,0.055) 0%, transparent 65%); pointer-events: none;
-  }
+  .masthead::before { content: ''; position: absolute; top: -80px; right: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(232,200,74,0.055) 0%, transparent 65%); pointer-events: none; }
   .masthead-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px; }
   .kicker { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
   .week-title { font-family: 'Playfair Display', serif; font-size: clamp(30px, 4.5vw, 54px); font-weight: 900; line-height: 1.05; letter-spacing: -0.025em; color: #fff; }
@@ -49,7 +44,6 @@
   .badge-green { background: rgba(61,214,140,0.1); border: 1px solid rgba(61,214,140,0.28); color: var(--green); }
   .pub-date { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
 
-  /* ─── TICKER BAR ─── */
   .ticker-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 64px; display: flex; gap: 36px; flex-wrap: wrap; align-items: center; }
   .t-item { display: flex; flex-direction: column; gap: 2px; }
   .t-name { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }
@@ -58,30 +52,26 @@
   .neg { color: var(--red); } .pos { color: var(--green); }
   .vdiv { width: 1px; height: 38px; background: var(--border); }
 
-  /* ─── LAYOUT ─── */
   .container { max-width: 1120px; margin: 0 auto; padding: 0 64px 90px; }
   .section { margin-top: 60px; padding-top: 56px; border-top: 1px solid var(--border); }
   .section:first-child { border-top: none; padding-top: 0; }
   .sec-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
   .sec-title { font-family: 'Playfair Display', serif; font-size: 23px; font-weight: 700; color: #fff; margin-bottom: 28px; }
 
-  /* ─── INDEX CARDS ─── */
   .idx-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-bottom: 28px; }
   .idx-card { background: var(--surface); padding: 26px; position: relative; overflow: hidden; }
-  .idx-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--red); transition: background 0.3s; }
+  .idx-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--red); }
   .idx-card.up::after { background: var(--green); }
   .idx-name { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
   .idx-close { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 3px; }
   .idx-wtd { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-bottom: 6px; }
   .idx-note { font-size: 11.5px; color: var(--label); line-height: 1.5; }
 
-  /* ─── BULLETS ─── */
   .blist { list-style: none; display: flex; flex-direction: column; gap: 11px; }
   .blist li { padding-left: 20px; position: relative; font-size: 13.5px; color: #bcc3d6; line-height: 1.65; }
   .blist li::before { content: '—'; position: absolute; left: 0; color: var(--accent); font-family: 'IBM Plex Mono', monospace; }
   .blist li strong { color: var(--text); font-weight: 600; }
 
-  /* ─── TWO COL ─── */
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
   .col-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
   .col-lbl.lead { color: var(--green); } .col-lbl.lag { color: var(--red); }
@@ -90,29 +80,25 @@
   .tag.g { background: rgba(61,214,140,.07); border-color: rgba(61,214,140,.22); color: var(--green); }
   .tag.r { background: rgba(240,91,91,.07); border-color: rgba(240,91,91,.22); color: var(--red); }
 
-  /* ─── DATA CELLS ─── */
   .data-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 2px; margin-bottom: 26px; }
   .dcell { background: var(--surface); padding: 20px 22px; }
   .dc-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
   .dc-val { font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 500; color: #fff; margin-bottom: 2px; }
-  .dc-val.hot { color: var(--red); } .dc-val.warm { color: var(--accent); }
+  .dc-val.hot { color: var(--red); } .dc-val.warm { color: var(--accent); } .dc-val.cool { color: var(--green); }
   .dc-note { font-size: 11px; color: var(--label); line-height: 1.45; }
 
-  /* ─── COMPANY ROWS ─── */
   .co-row { display: flex; align-items: flex-start; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--border); }
   .co-row:last-child { border-bottom: none; }
   .tkr { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; background: var(--surface2); border: 1px solid var(--border); padding: 4px 9px; min-width: 66px; text-align: center; flex-shrink: 0; margin-top: 1px; border-radius: 2px; color: #fff; }
   .co-desc { font-size: 13.5px; color: #bcc3d6; line-height: 1.55; flex: 1; }
-  .co-mv { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; flex-shrink: 0; margin-top: 2px; }
+  .co-mv { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; flex-shrink: 0; margin-top: 2px; font-weight: 500; }
 
-  /* ─── CRYPTO GRID ─── */
-  .crypto-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-bottom: 26px; }
+  .crypto-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; margin-bottom: 26px; }
   .cc { background: var(--surface); padding: 20px 22px; }
   .cc-name { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
   .cc-price { font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 700; color: #fff; margin-bottom: 3px; }
   .cc-chg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
 
-  /* ─── GLOBAL TABLE ─── */
   .gtable { width: 100%; border-collapse: collapse; }
   .gtable th { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); padding: 9px 16px; text-align: left; border-bottom: 1px solid var(--border); }
   .gtable td { padding: 13px 16px; font-size: 13px; color: #bcc3d6; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -120,22 +106,18 @@
   .gtable td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #fff; white-space: nowrap; }
   .gtable td:nth-child(2) { font-family: 'IBM Plex Mono', monospace; font-size: 11px; width: 110px; }
 
-  /* ─── TAKEAWAY ─── */
   .takeaway { background: var(--surface); border-left: 3px solid var(--accent); padding: 30px 34px; font-size: 14.5px; color: #d0d5e8; line-height: 1.8; font-style: italic; }
 
-  /* ─── AHEAD GRID ─── */
   .ahead-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; }
   .ahead-cell { background: var(--surface); padding: 20px 22px; }
   .ahead-day { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent2); margin-bottom: 8px; }
   .ahead-ev { font-size: 13px; color: #bcc3d6; line-height: 1.65; }
 
-  /* ─── CHART ─── */
   .chart-wrap { background: var(--surface); padding: 28px 28px 22px; }
   .chart-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
   .chart-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; }
   canvas { display: block; width: 100% !important; }
 
-  /* ─── FOOTER ─── */
   .footer { border-top: 1px solid var(--border); padding: 26px 64px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
   .footer-txt { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--muted); letter-spacing: 0.04em; }
 
@@ -152,13 +134,11 @@
   <div class="masthead-row">
     <div>
       <div class="kicker">Weekly Market Summary · U.S. Equities &amp; Digital Assets</div>
-      <div class="week-title">Feb 24 – <span>Feb 28</span>, 2026</div>
+      <div class="week-title">Feb 23 – <span>Feb 27</span>, 2026</div>
     </div>
     <div class="masthead-meta">
-      <div class="badge badge-green">
-        ▲ Risk-On / Rally
-      </div>
-      <div class="pub-date">Published February 28, 2026 · Post Market Close</div>
+      <div class="badge badge-green">▲ Risk-On / Rally</div>
+      <div class="pub-date">Published February 27, 2026 · Post Market Close</div>
     </div>
   </div>
 </div>
@@ -168,47 +148,40 @@
   <div class="t-item">
     <div class="t-name">S&amp;P 500</div>
     <div class="t-val">6,878.88</div>
-    <div class="t-chg pos">▲ +0.6% WTD</div>
+    <div class="t-chg pos">▲ +0.6% This Week</div>
   </div>
   <div class="vdiv"></div>
   <div class="t-item">
     <div class="t-name">Nasdaq</div>
     <div class="t-val">22,668.21</div>
-    <div class="t-chg pos">▲ +0.18% WTD</div>
+    <div class="t-chg pos">▲ +0.18% This Week</div>
   </div>
   <div class="vdiv"></div>
   <div class="t-item">
     <div class="t-name">DJIA</div>
     <div class="t-val">48,977.92</div>
-    <div class="t-chg pos">▲ +0.36% WTD</div>
+    <div class="t-chg pos">▲ +0.36% This Week</div>
   </div>
   <div class="vdiv"></div>
   <div class="t-item">
     <div class="t-name">VIX</div>
     <div class="t-val">19.86</div>
-    <div class="t-chg neg">▼ -5.47% WTD</div>
+    <div class="t-chg neg">▼ -5.47% This Week</div>
   </div>
   <div class="vdiv"></div>
   <div class="t-item">
     <div class="t-name">Bitcoin</div>
-    <div class="t-val">$65,803</div>
-    <div class="t-chg pos">▲ +2.69% WTD</div>
-  </div>
-  <div class="vdiv"></div>
-  <div class="t-item">
-    <div class="t-name">Ethereum</div>
-    <div class="t-val">$1,926</div>
-    <div class="t-chg pos">▲ +3.95% WTD</div>
+    <div class="t-val">$65,815</div>
+    <div class="t-chg pos">▲ +2.71% This Week</div>
   </div>
   <div class="vdiv"></div>
   <div class="t-item">
     <div class="t-name">10-Yr Yield</div>
     <div class="t-val">3.96%</div>
-    <div class="t-chg neg">▼ -1.74 bps WTD</div>
+    <div class="t-chg neg">▼ -1.74 bps This Week</div>
   </div>
 </div>
 
-<!-- BODY -->
 <div class="container">
 
   <!-- ① INDICES -->
@@ -236,12 +209,10 @@
         <div class="idx-note">Price-weighted index representing 30 prominent blue-chip U.S. corporations.</div>
       </div>
     </div>
-
+    
     <ul class="blist">
-      <li><strong>Tone: Risk-Off / Choppy.</strong> The week opened on SCOTUS tariff ruling relief, staged a mid-week bounce Wednesday, then collapsed Thursday–Friday under Nvidia's post-earnings malaise, Block's mass layoff announcement, and a hotter-than-expected PPI print Friday morning.</li>
-      <li><strong>VIX reclaimed 19.86</strong> by Friday's close, confirming a broad shift back to hedging mode. The 20-handle is increasingly seen as a structural floor under current macro conditions.</li>
-      <li><strong>Sentiment deterioration:</strong> AAII bullish investors fell to 33.2% — down from 44.4% at late January's peak. Nearly half the decline happened in just four weeks, a pace typically associated with meaningful corrections.</li>
-      <li><strong>UBS downgraded U.S. equities to "neutral,"</strong> citing elevated valuations and the view that international markets now offer better risk/reward — echoing a growing consensus call.</li>
+      <li><strong>Market Tone:</strong> U.S. equities finished the week higher, with the S&P 500 recording a 0.6% move.</li>
+      <li><strong>Volatility Profile:</strong> The VIX closed the week at 19.86. Levels below 20 generally indicate a calmer equity environment, while prints above 20 signal elevated hedging activity.</li>
     </ul>
   </div>
 
@@ -252,100 +223,80 @@
 
     <div class="two-col" style="margin-bottom:26px;">
       <div>
-        <div class="col-lbl lead">▲ Leading Sectors</div>
-        <div class="tag-row">
-          <span class="tag g">Consumer Staples (XLP)</span>
-          <span class="tag g">Energy (XLE)</span>
-          <span class="tag g">Materials (XLB)</span>
-          <span class="tag g">Industrials (XLI)</span>
-        </div>
+        <div class="col-lbl lead">▲ Top Performing Sectors</div>
+        <div class="tag-row"><span class="tag g">Comm. Services (XLC) (+2.33%)</span><span class="tag g">Utilities (XLU) (+2.25%)</span><span class="tag g">Cons. Discretionary (XLY) (+1.63%)</span><span class="tag g">Energy (XLE) (+1.4%)</span></div>
         <ul class="blist">
-          <li>Defensives and commodity-linked sectors led the month — a textbook late-cycle rotation as investors fled AI-momentum exposure.</li>
-          <li>XLI's momentum score improved despite headwinds; aerospace/defense names within industrials absorbed some institutional buying amid geopolitical noise.</li>
+          <li>Capital rotated strongly into <strong>Comm. Services (XLC)</strong>, making it the top performing segment of the S&P 500 this week.</li>
+          <li>Utilities (XLU) also exhibited strong relative momentum, capturing positive institutional inflows.</li>
         </ul>
       </div>
       <div>
         <div class="col-lbl lag">▼ Lagging Sectors</div>
-        <div class="tag-row">
-          <span class="tag r">Technology (XLK)</span>
-          <span class="tag r">Financials (XLF)</span>
-          <span class="tag r">Comm. Services (XLC)</span>
-          <span class="tag r">Cons. Discretionary (XLY)</span>
-        </div>
+        <div class="tag-row"><span class="tag r">Healthcare (XLV) (+1.05%)</span><span class="tag r">Materials (XLB) (+0.85%)</span><span class="tag r">Real Estate (XLRE) (+0.53%)</span><span class="tag r">Technology (XLK) (+0.17%)</span></div>
         <ul class="blist">
-          <li>XLK is now in the momentum map's "Lagging" quadrant — a technical confirmation of the ongoing de-rating in AI-heavy tech names.</li>
-          <li>Financials fell sharply Friday on private credit contagion fears. AXP, GS, and Jefferies dragged on concerns about credit exposure.</li>
+          <li><strong>Healthcare (XLV)</strong> lagged the broader market, absorbing the heaviest selling pressure over the 5-day period.</li>
+          <li>Materials (XLB) also faced structural headwinds, underperforming relative to the core index benchmarks.</li>
         </ul>
       </div>
     </div>
-
-    <ul class="blist">
-      <li><strong>Theme: "The Great Rotation" is underway.</strong> Capital is actively exiting U.S. AI-momentum positions and redeploying into defensives domestically and into international markets abroad. This is structural, not tactical.</li>
-      <li><strong>Gains were not broad-based.</strong> The advance/decline ratio deteriorated across the week, with small-caps (Russell 2000) underperforming large-caps materially. Breadth is one of the weakest signals of the year.</li>
-    </ul>
   </div>
 
   <!-- ③ MACRO -->
   <div class="section">
     <div class="sec-label">Section 03</div>
-    <div class="sec-title">Key Macro Events &amp; Data</div>
+    <div class="sec-title">Key Macro &amp; Rates Data</div>
 
     <div class="data-row">
       <div class="dcell">
-        <div class="dc-lbl">PPI Headline (Jan MoM)</div>
-        <div class="dc-val hot">+0.5%</div>
-        <div class="dc-note">Beat +0.3% est. Prev: +0.4%. Services surge the primary driver. Triggered the Friday selloff.</div>
+        <div class="dc-lbl">10-Yr Treasury Yield</div>
+        <div class="dc-val cool">3.96%</div>
+        <div class="dc-note">Yield fell by 1.74 bps this week, acting as a primary driver for broader equity valuations and sector rotation.</div>
       </div>
       <div class="dcell">
-        <div class="dc-lbl">Core PPI (Jan MoM)</div>
-        <div class="dc-val hot">+0.8%</div>
-        <div class="dc-note">vs +0.3% est — strongest monthly core gain since July. YoY: 3.6%, highest in 10 months.</div>
+        <div class="dc-lbl">U.S. Dollar Index (DXY)</div>
+        <div class="dc-val cool">97.65</div>
+        <div class="dc-note">The Dollar weakened by 0.05% over the 5-day period, impacting multinational revenue expectations.</div>
       </div>
       <div class="dcell">
-        <div class="dc-lbl">Jobless Claims</div>
-        <div class="dc-val">212K</div>
-        <div class="dc-note">Below 215K est. Continuing claims 1.833M — near 10-month low. Labor still "low-hire, low-fire."</div>
-      </div>
-      <div class="dcell">
-        <div class="dc-lbl">Fed Funds Rate</div>
-        <div class="dc-val">3.50–3.75%</div>
-        <div class="dc-note">On hold. March cut probability: ~5%. First cut now priced for June.</div>
+        <div class="dc-lbl">Volatility Index (VIX)</div>
+        <div class="dc-val cool">19.86</div>
+        <div class="dc-note">A weekly change of -5.47%. Currently trading in the Normal/Calm Zone, reflecting institutional positioning.</div>
       </div>
     </div>
-
-    <ul class="blist">
-      <li><strong>PPI breakdown:</strong> Headline goods prices actually fell −0.3%, meaning the entire beat came from <em>services</em>. Economists flagged this as direct evidence of tariff pass-through along the supply chain.</li>
-      <li><strong>SCOTUS tariff ruling &amp; replacement:</strong> The White House reimposed a 15% blanket global tariff under Section 122 of the Trade Act of 1974, effective immediately and valid for 150 days. Markets viewed the swap as policy continuity, not relief.</li>
-      <li><strong>Powell succession:</strong> Kevin Warsh (nominated to replace Powell) is viewed as hawkish. Markets are watching confirmation proceedings closely, as a Warsh Fed would likely condition any easing on simultaneous QT.</li>
-    </ul>
   </div>
 
   <!-- ④ COMPANIES -->
   <div class="section">
     <div class="sec-label">Section 04</div>
-    <div class="sec-title">Major Company Highlights</div>
+    <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
 
     <div style="margin-bottom:20px;">
-      <div class="co-row">
-        <span class="tkr">NVDA</span>
-        <div class="co-desc">Beat Q4 revenue and EPS estimates, but shares fell in a "sell the news" reaction. The market's refusal to reward a clean beat exposed growing skepticism about the <em>sustainability</em> of AI capex at current levels.</div>
-        <span class="co-mv neg">▼ Sell News</span>
-      </div>
-      <div class="co-row">
-        <span class="tkr">DELL</span>
-        <div class="co-desc">Record AI server demand drove Dell's Q4 beat. The company simultaneously announced a massive buyback authorization, proving demand for physical AI infrastructure remains intact.</div>
-        <span class="co-mv pos">▲ Buybacks</span>
-      </div>
-      <div class="co-row">
-        <span class="tkr">SQ</span>
-        <div class="co-desc">Block announced layoffs exceeding 4,000 employees — nearly half the workforce — citing AI-driven productivity gains replacing headcount. Amplified Friday's AI-disruption narrative.</div>
-        <span class="co-mv neg">Layoffs</span>
-      </div>
-      <div class="co-row">
-        <span class="tkr">NFLX</span>
-        <div class="co-desc">Shares jumped after Netflix declined to raise its bid to match Paramount Skydance's offer for Warner Bros.' assets. The market read it as disciplined capital allocation.</div>
-        <span class="co-mv pos">▲ Discipline</span>
-      </div>
+      
+        <div class="co-row">
+          <span class="tkr">AAPL</span>
+          <div class="co-desc"><strong>Apple</strong> closed the week at $264.18. As a core mega-cap constituent, its -0.75% weekly move heavily influenced the broader technology sector and market cap-weighted indices.</div>
+          <span class="co-mv neg">▼ -0.75%</span>
+        </div>
+        <div class="co-row">
+          <span class="tkr">MSFT</span>
+          <div class="co-desc"><strong>Microsoft</strong> closed the week at $392.74. As a core mega-cap constituent, its +2.15% weekly move heavily influenced the broader technology sector and market cap-weighted indices.</div>
+          <span class="co-mv pos">▲ +2.15%</span>
+        </div>
+        <div class="co-row">
+          <span class="tkr">NVDA</span>
+          <div class="co-desc"><strong>Nvidia</strong> closed the week at $177.19. As a core mega-cap constituent, its -7.5% weekly move heavily influenced the broader technology sector and market cap-weighted indices.</div>
+          <span class="co-mv neg">▼ -7.5%</span>
+        </div>
+        <div class="co-row">
+          <span class="tkr">AMZN</span>
+          <div class="co-desc"><strong>Amazon</strong> closed the week at $210.00. As a core mega-cap constituent, its +2.3% weekly move heavily influenced the broader technology sector and market cap-weighted indices.</div>
+          <span class="co-mv pos">▲ +2.3%</span>
+        </div>
+        <div class="co-row">
+          <span class="tkr">META</span>
+          <div class="co-desc"><strong>Meta Platforms</strong> closed the week at $648.18. As a core mega-cap constituent, its +1.72% weekly move heavily influenced the broader technology sector and market cap-weighted indices.</div>
+          <span class="co-mv pos">▲ +1.72%</span>
+        </div>
     </div>
   </div>
 
@@ -357,26 +308,25 @@
     <div class="crypto-grid">
       <div class="cc">
         <div class="cc-name">Bitcoin (BTC)</div>
-        <div class="cc-price">$65,803</div>
-        <div class="cc-chg pos">▲ 2.69% WTD</div>
+        <div class="cc-price">$65,815</div>
+        <div class="cc-chg pos">▲ 2.71% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Ethereum (ETH)</div>
-        <div class="cc-price">$1,926</div>
-        <div class="cc-chg pos">▲ 3.95% WTD</div>
+        <div class="cc-price">$1,927</div>
+        <div class="cc-chg pos">▲ 4.02% WTD</div>
       </div>
       <div class="cc">
-        <div class="cc-name">Spot BTC ETFs</div>
-        <div class="cc-price">+$1.1B</div>
-        <div class="cc-chg pos">▲ Best 3-day inflow streak in 6 weeks</div>
+        <div class="cc-name">Solana (SOL)</div>
+        <div class="cc-price">$81.90</div>
+        <div class="cc-chg pos">▲ 3.62% WTD</div>
+      </div>
+      <div class="cc">
+        <div class="cc-name">XRP</div>
+        <div class="cc-price">$1.3600</div>
+        <div class="cc-chg pos">▲ 0.74% WTD</div>
       </div>
     </div>
-
-    <ul class="blist">
-      <li><strong>Weekly intraday dynamics:</strong> BTC bottomed early in the week, then staged a sharp Wednesday rally to briefly touch ~$70,000 before being rejected. The $70K level is established resistance; $60K–$65K is the key structural support zone.</li>
-      <li><strong>PPI reaction (Friday):</strong> Within 45 minutes of the 8:30 AM PPI release, BTC slipped as higher-for-longer rate expectations instantly repriced. Over 96,000 traders liquidated Friday with ~$260M in total forced closes.</li>
-      <li><strong>ETF flows recovered mid-week:</strong> U.S. spot Bitcoin ETFs pulled in ~$1.1B across three sessions, coinciding with the Coinbase Premium Index rebounding. This institutional bid provided the floor for Wednesday's bounce.</li>
-    </ul>
   </div>
 
   <!-- ⑥ GLOBAL -->
@@ -387,26 +337,21 @@
     <table class="gtable" style="margin-bottom:26px;">
       <thead>
         <tr>
-          <th>Region / Index</th>
-          <th>Performance</th>
-          <th>Key Driver &amp; Implication</th>
+          <th>Index / Asset</th>
+          <th>WTD Performance</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>MSCI World ex-US</td>
-          <td class="pos">+~8% YTD</td>
-          <td>International developed markets are dramatically outperforming U.S. equities YTD. Cheaper valuations + weaker USD driving sustained capital rotation out of the U.S.</td>
+          <td>Nikkei 225 (Japan)</td>
+          <td class="pos">+3.56%</td>
+          <td>Japanese equities tracked broader global momentum flows this week.</td>
         </tr>
         <tr>
-          <td>European Stoxx</td>
-          <td class="pos">Continued Strength</td>
-          <td>Strong earnings; ECB on hold with cuts expected if inflation dips. UK shares outperformed on BoE cut bets. Opened lower Monday on tariff announcement.</td>
-        </tr>
-        <tr>
-          <td>Asia-Pacific</td>
-          <td class="pos">Rose on Reopen</td>
-          <td>Lunar New Year holiday closures muted activity. Markets reopened and rose despite tariff uncertainty. South Korean tech stocks rotating from U.S.</td>
+          <td>Euro Stoxx 50 (EU)</td>
+          <td class="pos">+0.4%</td>
+          <td>European blue-chip stocks digested the latest economic policy signaling.</td>
         </tr>
       </tbody>
     </table>
@@ -417,31 +362,23 @@
     <div class="sec-label">Section 07</div>
     <div class="sec-title">Investor Takeaway</div>
     <div class="takeaway">
-      This week felt like a slow-motion confidence crisis. The brief mid-week relief proved to be a head fake, as Friday's PPI print ripped away any remaining hope for a near-term Fed pivot. The week's most important market signal wasn't the inflation data, though. It was Nvidia: a clean earnings beat from the S&P's most consequential stock failing to sustain even an intraday rally. When the market cannot reward the AI bellwether on an unambiguously strong quarter, it tells you the problem isn't fundamentals — it's valuation, positioning, and a growing crisis of conviction. The burden of proof for U.S. large-cap tech bulls just got significantly heavier.
+      U.S. equities finished the week <strong>higher</strong>, with the S&P 500 registering a 0.6% change, while the tech-heavy Nasdaq moved 0.18%. Market internals showed capital flowing heavily into Comm. Services (XLC) and Utilities (XLU), establishing them as the clear leaders for the week. Conversely, Healthcare (XLV) faced the most sustained pressure. In the fixed-income market, the 10-Year Treasury yield closed at 3.96%, and the VIX volatility index settled at 19.86. In the digital asset space, Bitcoin moved 2.71% over the last 5 days to close the traditional trading week near $65,815.
     </div>
   </div>
 
-  <!-- ⑧ LOOKING AHEAD -->
+  <!-- ⑧ AHEAD -->
   <div class="section">
     <div class="sec-label">Section 08</div>
-    <div class="sec-title">Looking Ahead</div>
+    <div class="sec-title">Looking Ahead to Next Week</div>
 
     <div class="ahead-grid" style="margin-bottom:24px;">
       <div class="ahead-cell">
-        <div class="ahead-day">Monday</div>
-        <div class="ahead-ev"><strong>ISM Manufacturing PMI</strong> — First look at whether tariff disruption is hitting manufacturers' activity and new orders.</div>
+        <div class="ahead-day">Macro &amp; Economic Data</div>
+        <div class="ahead-ev">Investors will focus heavily on upcoming inflation prints and labor market reports to gauge the broader health of the consumer and the trajectory of monetary policy.</div>
       </div>
       <div class="ahead-cell">
-        <div class="ahead-day">Wednesday</div>
-        <div class="ahead-ev"><strong>ISM Services PMI</strong> — The economy's engine; watch new orders and prices paid. <strong>JOLTS Job Openings</strong> — Demand-side labor read.</div>
-      </div>
-      <div class="ahead-cell">
-        <div class="ahead-day">Thursday</div>
-        <div class="ahead-ev"><strong>Jobless Claims</strong> — Any spike toward 250K+ would be a major labor market deterioration signal.</div>
-      </div>
-      <div class="ahead-cell">
-        <div class="ahead-day">Friday ⚡ KEY EVENT</div>
-        <div class="ahead-ev"><strong>Non-Farm Payrolls & Unemployment</strong> — The week's marquee print. A weak print could trigger immediate rate cut repricing.</div>
+        <div class="ahead-day">Federal Reserve Policy</div>
+        <div class="ahead-ev">Speeches from regional Fed presidents and FOMC members will be closely monitored for clues regarding interest rate adjustments and balance sheet runoff.</div>
       </div>
     </div>
   </div>
@@ -449,7 +386,7 @@
   <!-- ⑨ CHART -->
   <div class="section">
     <div class="sec-label">Section 09</div>
-    <div class="sec-title">S&amp;P 500 — Daily Close (Feb 24–Feb 28, 2026)</div>
+    <div class="sec-title">S&amp;P 500 — Daily Close (Feb 23–Feb 27, 2026)</div>
     <div class="chart-wrap">
       <div class="chart-hdr">
         <div class="chart-lbl">S&amp;P 500 (SPX) · Actual Daily Closing Prices</div>
@@ -463,8 +400,8 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  <div class="footer-txt">Automated Market Summary · February 28, 2026</div>
-  <div class="footer-txt">Live Data Sourced via YFinance API</div>
+  <div class="footer-txt">Automated Market Summary · Post Market Close Edition</div>
+  <div class="footer-txt">Live Data Sourced via YFinance API · February 27, 2026</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
