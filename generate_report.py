@@ -3,24 +3,31 @@ import datetime
 import json
 
 def fetch_weekly_data(ticker_symbol):
-    """Fetches the last 5 days of closing prices for a given ticker."""
+    """Fetches 6 days of data to get the previous Friday close, then returns the 5-day chart and WTD math."""
     try:
         ticker = yf.Ticker(ticker_symbol)
-        hist = ticker.history(period="5d")
+        hist = ticker.history(period="6d")
         
         if len(hist) < 2:
-            return [], [], 0.0, 0.0
+            return [], [], 0.0, 0.0, 0.0
             
-        dates = [d.strftime('%a %m/%d') for d in hist.index]
-        closes = [round(val, 2) for val in hist['Close'].tolist()]
+        # The first row is the previous week's close
+        prev_close = hist['Close'].iloc[0]
         
-        start_price = closes[0]
+        # The chart should only show the current week's 5 days
+        chart_hist = hist.iloc[-5:]
+        dates = [d.strftime('%a %m/%d') for d in chart_hist.index]
+        closes = [round(val, 2) for val in chart_hist['Close'].tolist()]
+        
         end_price = closes[-1]
-        pct_change = ((end_price - start_price) / start_price) * 100
         
-        return dates, closes, end_price, round(pct_change, 2)
+        # Calculate true Week-to-Date percentage change
+        pct_change = ((end_price - prev_close) / prev_close) * 100 if prev_close != 0 else 0.0
+        abs_change = end_price - prev_close
+        
+        return dates, closes, end_price, round(pct_change, 2), round(abs_change, 2)
     except Exception:
-        return [], [], 0.0, 0.0
+        return [], [], 0.0, 0.0, 0.0
 
 def generate_html():
     print("Fetching market data...")
@@ -32,37 +39,37 @@ def generate_html():
     if len(sp_hist) >= 2:
         start_date = sp_hist.index[0]
         end_date = sp_hist.index[-1]
-        week_start_str = start_date.strftime('%b %d').replace(' 0', ' ')
-        today_str = end_date.strftime('%b %d').replace(' 0', ' ')
+        week_start_str = start_date.strftime('%b %-d')
+        today_str = end_date.strftime('%b %-d')
         year_str = end_date.strftime('%Y')
-        full_date = end_date.strftime('%B %d, %Y')
+        full_date = end_date.strftime('%B %-d, %Y')
     else:
-        # Fallback if market is closed/error
         now = datetime.datetime.now()
-        week_start_str = (now - datetime.timedelta(days=4)).strftime('%b %d')
-        today_str = now.strftime('%b %d')
+        week_start_str = (now - datetime.timedelta(days=4)).strftime('%b %-d')
+        today_str = now.strftime('%b %-d')
         year_str = now.strftime('%Y')
-        full_date = now.strftime('%B %d, %Y')
+        full_date = now.strftime('%B %-d, %Y')
 
-    # Fetch remaining data
-    sp_dates, sp_data, sp_close, sp_pct = fetch_weekly_data('^GSPC')    
-    _, nd_data, nd_close, nd_pct = fetch_weekly_data('^IXIC')           
-    _, dj_data, dj_close, dj_pct = fetch_weekly_data('^DJI')            
-    _, vix_data, vix_close, vix_pct = fetch_weekly_data('^VIX')         
-    _, tnx_data, tnx_close, tnx_pct = fetch_weekly_data('^TNX')         
-    _, dxy_data, dxy_close, dxy_pct = fetch_weekly_data('DX-Y.NYB')
+    # Fetch Data
+    sp_dates, sp_data, sp_close, sp_pct, _ = fetch_weekly_data('^GSPC')    
+    _, nd_data, nd_close, nd_pct, _ = fetch_weekly_data('^IXIC')           
+    _, dj_data, dj_close, dj_pct, dj_abs = fetch_weekly_data('^DJI')            
+    _, vix_data, vix_close, vix_pct, _ = fetch_weekly_data('^VIX')         
+    _, tnx_data, tnx_close, tnx_pct, tnx_abs = fetch_weekly_data('^TNX') 
+    _, irx_data, irx_close, irx_pct, irx_abs = fetch_weekly_data('^IRX')        
+    _, dxy_data, dxy_close, dxy_pct, _ = fetch_weekly_data('DX-Y.NYB')
 
-    # 2. Fetch Crypto
-    _, _, btc_close, btc_pct = fetch_weekly_data('BTC-USD')      
-    _, _, eth_close, eth_pct = fetch_weekly_data('ETH-USD')      
-    _, _, sol_close, sol_pct = fetch_weekly_data('SOL-USD')
-    _, _, xrp_close, xrp_pct = fetch_weekly_data('XRP-USD')
+    # Crypto
+    _, _, btc_close, btc_pct, _ = fetch_weekly_data('BTC-USD')      
+    _, _, eth_close, eth_pct, _ = fetch_weekly_data('ETH-USD')      
+    _, _, sol_close, sol_pct, _ = fetch_weekly_data('SOL-USD')
+    _, _, xrp_close, xrp_pct, _ = fetch_weekly_data('XRP-USD')
 
-    # 3. Fetch Global
-    _, _, n225_close, n225_pct = fetch_weekly_data('^N225')
-    _, _, stoxx_close, stoxx_pct = fetch_weekly_data('^STOXX50E')
+    # Global
+    _, _, n225_close, n225_pct, _ = fetch_weekly_data('^N225')
+    _, _, stoxx_close, stoxx_pct, _ = fetch_weekly_data('^STOXX50E')
 
-    # 4. Fetch & Sort Sectors
+    # Fetch & Sort Sectors
     sectors = {
         'Technology (XLK)': 'XLK', 'Financials (XLF)': 'XLF',
         'Energy (XLE)': 'XLE', 'Healthcare (XLV)': 'XLV',
@@ -73,7 +80,7 @@ def generate_html():
     }
     sector_perf = {}
     for name, ticker in sectors.items():
-        _, _, _, pct = fetch_weekly_data(ticker)
+        _, _, _, pct, _ = fetch_weekly_data(ticker)
         sector_perf[name] = pct
     
     sorted_sectors = sorted(sector_perf.items(), key=lambda x: x[1], reverse=True)
@@ -81,43 +88,42 @@ def generate_html():
     bottom_sectors = sorted_sectors[-4:]
 
     # Formatting Helpers
-    def fmt_chg(pct, is_yield=False):
+    def fmt_chg(pct, abs_val=None, is_yield=False, is_points=False):
         sign = "+" if pct >= 0 else ""
         color = "pos" if pct >= 0 else "neg"
         arrow = "▲" if pct >= 0 else "▼"
-        suffix = " bps" if is_yield else "%"
-        return f'<div class="t-chg {color}">{arrow} {sign}{pct}{suffix} This Week</div>'
         
-    def fmt_card_chg(pct):
-        sign = "+" if pct >= 0 else ""
-        color = "pos" if pct >= 0 else "neg"
-        arrow = "▲" if pct >= 0 else "▼"
-        return f'<div class="idx-wtd {color}">{arrow} {sign}{pct}% This Week</div>'
+        if is_yield and abs_val is not None:
+            bps = int(abs_val * 100) if abs_val < 10 else int(abs_val * 10)
+            return f'<div class="t-chg {color}">{arrow} {sign}{bps} bps WTD</div>'
+        elif is_points and abs_val is not None:
+            return f'<div class="t-chg {color}">{arrow} {sign}{int(abs_val)} pts WTD</div>'
+        else:
+            return f'<div class="t-chg {color}">{arrow} {sign}{pct}% WTD</div>'
 
-    # Dynamic tone and borders
+    # Dynamic Tone and Badges
+    market_tone = "▲ Risk-On / Rally" if sp_pct >= 0 else "⬇ Risk-Off / Pullback"
+    badge_color = "badge-green" if sp_pct >= 0 else "badge-red"
+    
     sp_card_class = "up" if sp_pct >= 0 else ""
     nd_card_class = "up" if nd_pct >= 0 else ""
     dj_card_class = "up" if dj_pct >= 0 else ""
-    
-    market_tone = "▲ Risk-On / Rally" if sp_pct >= 0 else "⬇ Risk-Off / Pullback"
-    badge_color = "badge-green" if sp_pct >= 0 else "badge-red"
 
-    # Build Top/Bottom Sector Tags
     top_tags = "".join([f'<span class="tag g">{s[0]} ({"+" if s[1]>=0 else ""}{s[1]}%)</span>' for s in top_sectors])
     bot_tags = "".join([f'<span class="tag r">{s[0]} ({"+" if s[1]>=0 else ""}{s[1]}%)</span>' for s in bottom_sectors])
 
-    # Build Mega-Cap Rows Dynamically
+    # Mega-Cap Rows
     mega_caps = {'AAPL': 'Apple', 'MSFT': 'Microsoft', 'NVDA': 'Nvidia', 'AMZN': 'Amazon', 'META': 'Meta Platforms'}
     mega_cap_html = ""
     for tk, name in mega_caps.items():
-        _, _, c_close, c_pct = fetch_weekly_data(tk)
+        _, _, c_close, c_pct, _ = fetch_weekly_data(tk)
         c_color = "pos" if c_pct >= 0 else "neg"
         c_arrow = "▲" if c_pct >= 0 else "▼"
         c_sign = "+" if c_pct >= 0 else ""
         mega_cap_html += f'''
         <div class="co-row">
           <span class="tkr">{tk}</span>
-          <div class="co-desc"><strong>{name}</strong> closed the week at ${c_close:,.2f}. As a core mega-cap constituent, its {c_sign}{c_pct}% weekly move heavily influenced the broader technology sector and market cap-weighted indices.</div>
+          <div class="co-desc"><strong>{name}</strong> closed the week at ${c_close:,.2f}. As a core mega-cap weight, its {c_sign}{c_pct}% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
           <span class="co-mv {c_color}">{c_arrow} {c_sign}{c_pct}%</span>
         </div>'''
 
@@ -253,7 +259,6 @@ def generate_html():
 </head>
 <body>
 
-<!-- MASTHEAD -->
 <div class="masthead">
   <div class="masthead-row">
     <div>
@@ -267,7 +272,6 @@ def generate_html():
   </div>
 </div>
 
-<!-- TICKER BAR -->
 <div class="ticker-bar">
   <div class="t-item">
     <div class="t-name">S&amp;P 500</div>
@@ -284,7 +288,7 @@ def generate_html():
   <div class="t-item">
     <div class="t-name">DJIA</div>
     <div class="t-val">{dj_close:,.2f}</div>
-    {fmt_chg(dj_pct)}
+    {fmt_chg(dj_pct, abs_val=dj_abs, is_points=True)}
   </div>
   <div class="vdiv"></div>
   <div class="t-item">
@@ -302,13 +306,11 @@ def generate_html():
   <div class="t-item">
     <div class="t-name">10-Yr Yield</div>
     <div class="t-val">{tnx_close:,.2f}%</div>
-    {fmt_chg(tnx_pct, is_yield=True)}
+    {fmt_chg(tnx_pct, abs_val=tnx_abs, is_yield=True)}
   </div>
 </div>
 
 <div class="container">
-
-  <!-- ① INDICES -->
   <div class="section" style="margin-top:52px;padding-top:0;border-top:none;">
     <div class="sec-label">Section 01</div>
     <div class="sec-title">Major U.S. Indices</div>
@@ -317,30 +319,29 @@ def generate_html():
       <div class="idx-card {sp_card_class}">
         <div class="idx-name">S&amp;P 500</div>
         <div class="idx-close">{sp_close:,.2f}</div>
-        {fmt_card_chg(sp_pct)}
+        <div class="idx-wtd {'pos' if sp_pct >= 0 else 'neg'}">{"▲" if sp_pct >= 0 else "▼"} {"+" if sp_pct >= 0 else ""}{sp_pct}% WTD</div>
         <div class="idx-note">Reflects broad market performance across the 500 largest U.S. publicly traded companies.</div>
       </div>
       <div class="idx-card {nd_card_class}">
         <div class="idx-name">Nasdaq Composite</div>
         <div class="idx-close">{nd_close:,.2f}</div>
-        {fmt_card_chg(nd_pct)}
+        <div class="idx-wtd {'pos' if nd_pct >= 0 else 'neg'}">{"▲" if nd_pct >= 0 else "▼"} {"+" if nd_pct >= 0 else ""}{nd_pct}% WTD</div>
         <div class="idx-note">Tech-heavy index heavily influenced by mega-cap growth and semiconductor equities.</div>
       </div>
       <div class="idx-card {dj_card_class}">
         <div class="idx-name">Dow Jones Industrial Avg.</div>
         <div class="idx-close">{dj_close:,.2f}</div>
-        {fmt_card_chg(dj_pct)}
+        <div class="idx-wtd {'pos' if dj_pct >= 0 else 'neg'}">{"▲" if dj_pct >= 0 else "▼"} {"+" if dj_abs >= 0 else ""}{int(dj_abs)} pts WTD</div>
         <div class="idx-note">Price-weighted index representing 30 prominent blue-chip U.S. corporations.</div>
       </div>
     </div>
     
     <ul class="blist">
-      <li><strong>Market Tone:</strong> U.S. equities finished the week {"higher" if sp_pct >= 0 else "lower"}, with the S&P 500 recording a {sp_pct}% move.</li>
+      <li><strong>Market Tone:</strong> U.S. equities finished the week {"higher" if sp_pct >= 0 else "lower"}, with the S&P 500 recording a {"+" if sp_pct >= 0 else ""}{sp_pct}% move.</li>
       <li><strong>Volatility Profile:</strong> The VIX closed the week at {vix_close:,.2f}. Levels below 20 generally indicate a calmer equity environment, while prints above 20 signal elevated hedging activity.</li>
     </ul>
   </div>
 
-  <!-- ② SECTORS -->
   <div class="section">
     <div class="sec-label">Section 02</div>
     <div class="sec-title">Sector Performance</div>
@@ -365,7 +366,6 @@ def generate_html():
     </div>
   </div>
 
-  <!-- ③ MACRO -->
   <div class="section">
     <div class="sec-label">Section 03</div>
     <div class="sec-title">Key Macro &amp; Rates Data</div>
@@ -374,7 +374,7 @@ def generate_html():
       <div class="dcell">
         <div class="dc-lbl">10-Yr Treasury Yield</div>
         <div class="dc-val {'hot' if tnx_pct >= 0 else 'cool'}">{tnx_close:,.2f}%</div>
-        <div class="dc-note">Yield {"rose" if tnx_pct >= 0 else "fell"} by {abs(tnx_pct)} bps this week, acting as a primary driver for broader equity valuations and sector rotation.</div>
+        <div class="dc-note">Yield {"rose" if tnx_pct >= 0 else "fell"} WTD, acting as a primary driver for broader equity valuations and sector rotation.</div>
       </div>
       <div class="dcell">
         <div class="dc-lbl">U.S. Dollar Index (DXY)</div>
@@ -382,24 +382,21 @@ def generate_html():
         <div class="dc-note">The Dollar {"strengthened" if dxy_pct >= 0 else "weakened"} by {abs(dxy_pct)}% over the 5-day period, impacting multinational revenue expectations.</div>
       </div>
       <div class="dcell">
-        <div class="dc-lbl">Volatility Index (VIX)</div>
-        <div class="dc-val {'hot' if vix_close >= 20 else 'cool'}">{vix_close:,.2f}</div>
-        <div class="dc-note">A weekly change of {vix_pct}%. Currently trading in the {"Fear/Hedging Zone" if vix_close >= 20 else "Normal/Calm Zone"}, reflecting institutional positioning.</div>
+        <div class="dc-lbl">13-Week T-Bill Yield</div>
+        <div class="dc-val">{irx_close:,.2f}%</div>
+        <div class="dc-note">Tracks closely with the Federal Funds Rate. Yield moved by {abs(irx_pct)}% this week.</div>
       </div>
     </div>
   </div>
 
-  <!-- ④ COMPANIES -->
   <div class="section">
     <div class="sec-label">Section 04</div>
     <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
-
     <div style="margin-bottom:20px;">
       {mega_cap_html}
     </div>
   </div>
 
-  <!-- ⑤ CRYPTO -->
   <div class="section">
     <div class="sec-label">Section 05</div>
     <div class="sec-title">Cryptocurrency Market Recap</div>
@@ -428,7 +425,6 @@ def generate_html():
     </div>
   </div>
 
-  <!-- ⑥ GLOBAL -->
   <div class="section">
     <div class="sec-label">Section 06</div>
     <div class="sec-title">Global Market Context</div>
@@ -456,16 +452,14 @@ def generate_html():
     </table>
   </div>
 
-  <!-- ⑦ TAKEAWAY -->
   <div class="section">
     <div class="sec-label">Section 07</div>
     <div class="sec-title">Investor Takeaway</div>
     <div class="takeaway">
-      U.S. equities finished the week <strong>{'higher' if sp_pct >= 0 else 'lower'}</strong>, with the S&P 500 registering a {sp_pct}% change, while the tech-heavy Nasdaq moved {nd_pct}%. Market internals showed capital flowing heavily into {top_sectors[0][0]} and {top_sectors[1][0]}, establishing them as the clear leaders for the week. Conversely, {bottom_sectors[0][0]} faced the most sustained pressure. In the fixed-income market, the 10-Year Treasury yield closed at {tnx_close}%, and the VIX volatility index settled at {vix_close}. In the digital asset space, Bitcoin moved {btc_pct}% over the last 5 days to close the traditional trading week near ${btc_close:,.0f}.
+      U.S. equities finished the week <strong>{'higher' if sp_pct >= 0 else 'lower'}</strong>, with the S&P 500 registering a {"+" if sp_pct >= 0 else ""}{sp_pct}% change, while the tech-heavy Nasdaq moved {"+" if nd_pct >= 0 else ""}{nd_pct}%. Market internals showed capital flowing heavily into {top_sectors[0][0]} and {top_sectors[1][0]}, establishing them as the clear leaders for the week. Conversely, {bottom_sectors[0][0]} faced the most sustained pressure. In the fixed-income market, the 10-Year Treasury yield closed at {tnx_close}%, and the VIX volatility index settled at {vix_close}. In the digital asset space, Bitcoin moved {"+" if btc_pct >= 0 else ""}{btc_pct}% over the last 5 days to close the traditional trading week near ${btc_close:,.0f}.
     </div>
   </div>
 
-  <!-- ⑧ AHEAD -->
   <div class="section">
     <div class="sec-label">Section 08</div>
     <div class="sec-title">Looking Ahead to Next Week</div>
@@ -482,7 +476,6 @@ def generate_html():
     </div>
   </div>
 
-  <!-- ⑨ CHART -->
   <div class="section">
     <div class="sec-label">Section 09</div>
     <div class="sec-title">S&amp;P 500 — Daily Close ({week_start_str}–{today_str}, {year_str})</div>
@@ -497,7 +490,6 @@ def generate_html():
 
 </div>
 
-<!-- FOOTER -->
 <div class="footer">
   <div class="footer-txt">Automated Market Summary · Post Market Close Edition</div>
   <div class="footer-txt">Live Data Sourced via YFinance API · {full_date}</div>
@@ -505,11 +497,16 @@ def generate_html():
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-// Injected Dynamic Data from Python
 const labels = {json.dumps(sp_dates)};
 const prices = {json.dumps(sp_data)};
 
 const ctx = document.getElementById('spxChart').getContext('2d');
+
+// Dynamic Min/Max calculation so the chart line isn't artificially flat
+const minPrice = Math.min(...prices);
+const maxPrice = Math.max(...prices);
+const yPadding = (maxPrice - minPrice) * 0.15 || maxPrice * 0.01;
+
 new Chart(ctx, {{
   type: 'line',
   data: {{
@@ -564,6 +561,8 @@ new Chart(ctx, {{
       }},
       y: {{
         position: 'right',
+        min: Math.floor(minPrice - yPadding),
+        max: Math.ceil(maxPrice + yPadding),
         grid: {{ color: 'rgba(255,255,255,0.045)', drawBorder: false }},
         ticks: {{
           color: '#5c6480', font: {{ family: 'IBM Plex Mono', size: 10 }},
