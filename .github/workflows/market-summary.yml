@@ -1,0 +1,48 @@
+name: Generate Weekly Market Summary
+
+# This tells GitHub when to run the script automatically
+on:
+  schedule:
+    # Runs at 21:15 UTC every Friday (Which is 4:15 PM EST / 5:15 PM EDT)
+    # The stock market closes at 4:00 PM EST, so this runs 15 minutes after the bell.
+    - cron: '15 21 * * 5'
+  
+  # This allows you to click a "Run workflow" button manually anytime you want
+  workflow_dispatch: 
+
+permissions:
+  contents: write # Allows the action to commit the generated HTML file back to the repo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance
+
+      - name: Generate the HTML Report
+        run: python generate_report.py
+
+      - name: Commit and Push changes
+        run: |
+          # Configure Git
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Stage the newly generated index.html file
+          git add index.html
+          
+          # Commit and Push (Only if there are changes)
+          git commit -m "Automated Weekly Market Summary update" || echo "No changes to commit"
+          git push
