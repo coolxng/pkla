@@ -1,0 +1,253 @@
+import yfinance as yf
+import datetime
+import json
+import os
+
+def fetch_weekly_data(ticker_symbol):
+    """Fetches the last 5 days of closing prices for a given ticker."""
+    ticker = yf.Ticker(ticker_symbol)
+    # Get the last 5 days of data
+    hist = ticker.history(period="5d")
+    
+    dates = [d.strftime('%a (%b %d)') for d in hist.index]
+    closes = [round(val, 2) for val in hist['Close'].tolist()]
+    
+    if len(closes) < 2:
+        return dates, closes, 0, 0
+        
+    start_price = closes[0]
+    end_price = closes[-1]
+    pct_change = ((end_price - start_price) / start_price) * 100
+    
+    return dates, closes, end_price, round(pct_change, 2)
+
+def generate_html():
+    # 1. Fetch real market data
+    print("Fetching market data...")
+    dates, sp_data, sp_close, sp_pct = fetch_weekly_data('^GSPC')    # S&P 500
+    _, nd_data, nd_close, nd_pct = fetch_weekly_data('^IXIC')        # Nasdaq
+    _, dj_data, dj_close, dj_pct = fetch_weekly_data('^DJI')         # Dow Jones
+    _, btc_data, btc_close, btc_pct = fetch_weekly_data('BTC-USD')   # Bitcoin
+
+    today_str = datetime.datetime.now().strftime('%B %d, %Y')
+
+    # Helper to format positive/negative CSS classes and arrows
+    def format_change(pct):
+        arrow = "▲" if pct >= 0 else "▼"
+        color = "text-emerald-400 bg-emerald-500/10" if pct >= 0 else "text-rose-400 bg-rose-500/10"
+        return f'<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {color}">{arrow} {abs(pct)}%</span>'
+
+    # 2. Build the HTML Template
+    # We inject the python variables directly into the HTML strings and JavaScript arrays
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Market Summary – Week Ending {today_str}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    ::-webkit-scrollbar {{ width: 8px; }}
+    ::-webkit-scrollbar-track {{ background: #020617; }}
+    ::-webkit-scrollbar-thumb {{ background: #334155; border-radius: 4px; }}
+    ::-webkit-scrollbar-thumb:hover {{ background: #475569; }}
+    .markdown-body p {{ margin-bottom: 0.75em; }}
+    .markdown-body strong {{ color: #f8fafc; font-weight: 600; }}
+    .markdown-body ul {{ list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }}
+    .markdown-body li {{ margin-bottom: 0.25em; }}
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-300 font-sans antialiased selection:bg-blue-500/30">
+
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-12">
+    
+    <header class="border-b border-slate-800/60 pb-8 text-center sm:text-left">
+      <h1 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Weekly Market Summary</h1>
+      <p class="text-slate-400 mt-3 font-medium flex items-center justify-center sm:justify-start gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        Week ending Friday, {today_str}
+      </p>
+    </header>
+
+    <section class="bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-white flex items-center gap-2">✨ AI Executive Summary</h2>
+          <p class="text-sm text-indigo-300 mt-1">Get a quick, 3-sentence TL;DR of this week's market action.</p>
+        </div>
+        <button id="btn-tldr" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap">
+          ✨ Generate TL;DR
+        </button>
+      </div>
+      <div id="tldr-result" class="hidden mt-4 pt-4 border-t border-indigo-500/30 text-slate-300 text-sm leading-relaxed markdown-body"></div>
+    </section>
+
+    <!-- Overall Market Performance -->
+    <section>
+      <h2 class="text-xl font-semibold text-white mb-5 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Overall Market Performance
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">S&P 500</span>
+            {format_change(sp_pct)}
+          </div>
+          <div class="text-2xl font-bold text-white mb-3">{sp_close:,.2f}</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nasdaq</span>
+            {format_change(nd_pct)}
+          </div>
+          <div class="text-2xl font-bold text-white mb-3">{nd_close:,.2f}</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dow Jones</span>
+            {format_change(dj_pct)}
+          </div>
+          <div class="text-2xl font-bold text-white mb-3">{dj_close:,.2f}</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bitcoin</span>
+            {format_change(btc_pct)}
+          </div>
+          <div class="text-2xl font-bold text-white mb-3">${btc_close:,.2f}</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Interactive Market Chart Feature -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+      <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        Weekly Price Action
+      </h2>
+      <p class="text-sm text-slate-400 mb-6">Interactive view of closing prices and relative percentage changes for the week.</p>
+      <div class="w-full h-[300px] sm:h-[400px] relative">
+        <canvas id="marketChart"></canvas>
+      </div>
+    </section>
+
+    <section class="bg-gradient-to-br from-slate-900 to-blue-950 border border-blue-800/50 rounded-2xl p-6 shadow-lg">
+      <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">✨ Portfolio Impact Analyzer</h2>
+      <p class="text-sm text-blue-300 mb-5">Describe your portfolio below, and Gemini AI will analyze the potential impact.</p>
+      <div class="flex flex-col gap-4">
+        <textarea id="portfolio-input" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" placeholder="e.g., '60/40 conservative portfolio'"></textarea>
+        <button id="btn-analyze" class="bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-6 rounded-xl transition-colors self-end flex items-center gap-2">✨ Analyze My Portfolio</button>
+      </div>
+      <div id="analyze-result" class="hidden mt-6 bg-slate-950/50 rounded-xl p-5 border border-slate-800 text-sm text-slate-300 leading-relaxed markdown-body"></div>
+    </section>
+
+    <footer class="mt-12 pt-8 border-t border-slate-800/60 text-center">
+      <p class="text-xs text-slate-500">Auto-generated via GitHub Actions. Data pulled via yfinance.</p>
+    </footer>
+
+  </main>
+
+  <script>
+    // In a real app, you would proxy this request through a backend so your key isn't public, 
+    // or rely on the user inputting their own key.
+    const apiKey = ""; 
+
+    async function generateContent(prompt, systemInstruction) {{
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${{apiKey}}`;
+      const payload = {{
+        contents: [{{ parts: [{{ text: prompt }}] }}],
+        systemInstruction: {{ parts: [{{ text: systemInstruction }}] }}
+      }};
+
+      try {{
+        const response = await fetch(url, {{
+          method: 'POST',
+          headers: {{ 'Content-Type': 'application/json' }},
+          body: JSON.stringify(payload)
+        }});
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+      }} catch (error) {{
+        console.error(error);
+        return "Error reaching Gemini API.";
+      }}
+    }}
+
+    // TLDR Action
+    document.getElementById('btn-tldr').addEventListener('click', async (e) => {{
+      const btn = e.currentTarget;
+      const res = document.getElementById('tldr-result');
+      btn.disabled = true; btn.innerText = "Summarizing..."; res.classList.remove('hidden'); res.innerHTML = "Loading...";
+      const context = `S&P500: {sp_close} ({sp_pct}%), Nasdaq: {nd_close} ({nd_pct}%), Dow: {dj_close} ({dj_pct}%), BTC: {btc_close} ({btc_pct}%)`;
+      const text = await generateContent(`Write a 3 sentence market summary based on these weekly returns: ${{context}}`, "You are a financial writer.");
+      res.innerHTML = marked.parse(text);
+      btn.disabled = false; btn.innerText = "✨ Generate TL;DR";
+    }});
+
+    // Portfolio Action
+    document.getElementById('btn-analyze').addEventListener('click', async (e) => {{
+      const btn = e.currentTarget; 
+      const input = document.getElementById('portfolio-input').value;
+      const res = document.getElementById('analyze-result');
+      if (!input) return;
+      btn.disabled = true; btn.innerText = "Analyzing..."; res.classList.remove('hidden'); res.innerHTML = "Loading...";
+      const context = `S&P500: {sp_close} ({sp_pct}%), Nasdaq: {nd_close} ({nd_pct}%), Dow: {dj_close} ({dj_pct}%)`;
+      const text = await generateContent(`Market data: ${{context}}. My portfolio: ${{input}}. Give 3 actionable insights based on this data.`, "You are a financial advisor.");
+      res.innerHTML = marked.parse(text);
+      btn.disabled = false; btn.innerText = "✨ Analyze My Portfolio";
+    }});
+
+    // Chart Initialization using injected Python data
+    document.addEventListener('DOMContentLoaded', function() {{
+      const ctx = document.getElementById('marketChart').getContext('2d');
+      const labels = {json.dumps(dates)};
+      const dataSp = {json.dumps(sp_data)};
+      const dataNd = {json.dumps(nd_data)};
+      const dataDj = {json.dumps(dj_data)};
+
+      const calcPct = (arr) => arr.map(v => ((v - arr[0]) / arr[0]) * 100);
+      
+      new Chart(ctx, {{
+        type: 'line',
+        data: {{
+          labels: labels,
+          datasets: [
+            {{ label: 'S&P 500', data: calcPct(dataSp), actualData: dataSp, borderColor: '#38bdf8', borderWidth: 2, tension: 0.3, pointRadius: 4 }},
+            {{ label: 'Nasdaq', data: calcPct(dataNd), actualData: dataNd, borderColor: '#818cf8', borderWidth: 2, tension: 0.3, pointRadius: 4 }},
+            {{ label: 'Dow Jones', data: calcPct(dataDj), actualData: dataDj, borderColor: '#fbbf24', borderWidth: 2, tension: 0.3, pointRadius: 4 }}
+          ]
+        }},
+        options: {{
+          responsive: true, maintainAspectRatio: false, interaction: {{ mode: 'index', intersect: false }},
+          plugins: {{
+            tooltip: {{
+              callbacks: {{
+                label: function(context) {{
+                  let lbl = context.dataset.label + ': ' + new Intl.NumberFormat('en-US').format(context.dataset.actualData[context.dataIndex]);
+                  return lbl + ' (' + context.parsed.y.toFixed(2) + '%)';
+                }}
+              }}
+            }}
+          }}
+        }}
+      }});
+    }});
+  </script>
+</body>
+</html>"""
+
+    # 3. Write out the generated file
+    with open('index.html', 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    print("Successfully generated index.html")
+
+if __name__ == "__main__":
+    generate_html()
