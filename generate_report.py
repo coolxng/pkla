@@ -3,24 +3,31 @@ import datetime
 import json
 
 def fetch_weekly_data(ticker_symbol):
-    """Fetches the last 5 days of closing prices for a given ticker."""
+    """Fetches 6 days of data to get the previous Friday close, then returns the 5-day chart and WTD math."""
     try:
         ticker = yf.Ticker(ticker_symbol)
-        hist = ticker.history(period="5d")
+        hist = ticker.history(period="6d")
         
         if len(hist) < 2:
-            return [], [], 0.0, 0.0
+            return [], [], 0.0, 0.0, 0.0
             
-        dates = [d.strftime('%a %m/%d') for d in hist.index]
-        closes = [round(val, 2) for val in hist['Close'].tolist()]
+        # The first row is the previous week's close
+        prev_close = hist['Close'].iloc[0]
         
-        start_price = closes[0]
+        # The chart should only show the current week's 5 days
+        chart_hist = hist.iloc[-5:]
+        dates = [d.strftime('%a %m/%d') for d in chart_hist.index]
+        closes = [round(val, 2) for val in chart_hist['Close'].tolist()]
+        
         end_price = closes[-1]
-        pct_change = ((end_price - start_price) / start_price) * 100
         
-        return dates, closes, end_price, round(pct_change, 2)
+        # Calculate true Week-to-Date percentage change
+        pct_change = ((end_price - prev_close) / prev_close) * 100 if prev_close != 0 else 0.0
+        abs_change = end_price - prev_close
+        
+        return dates, closes, end_price, round(pct_change, 2), round(abs_change, 2)
     except Exception:
-        return [], [], 0.0, 0.0
+        return [], [], 0.0, 0.0, 0.0
 
 def generate_html():
     print("Fetching market data...")
@@ -32,37 +39,40 @@ def generate_html():
     if len(sp_hist) >= 2:
         start_date = sp_hist.index[0]
         end_date = sp_hist.index[-1]
-        week_start_str = start_date.strftime('%b %d').replace(' 0', ' ')
-        today_str = end_date.strftime('%b %d').replace(' 0', ' ')
+        week_start_str = start_date.strftime('%b %-d')
+        today_str = end_date.strftime('%b %-d')
         year_str = end_date.strftime('%Y')
-        full_date = end_date.strftime('%B %d, %Y')
+        full_date = end_date.strftime('%B %-d, %Y')
     else:
-        # Fallback if market is closed/error
         now = datetime.datetime.now()
-        week_start_str = (now - datetime.timedelta(days=4)).strftime('%b %d')
-        today_str = now.strftime('%b %d')
+        week_start_str = (now - datetime.timedelta(days=4)).strftime('%b %-d')
+        today_str = now.strftime('%b %-d')
         year_str = now.strftime('%Y')
-        full_date = now.strftime('%B %d, %Y')
+        full_date = now.strftime('%B %-d, %Y')
 
-    # Fetch remaining data
-    sp_dates, sp_data, sp_close, sp_pct = fetch_weekly_data('^GSPC')    
-    _, nd_data, nd_close, nd_pct = fetch_weekly_data('^IXIC')           
-    _, dj_data, dj_close, dj_pct = fetch_weekly_data('^DJI')            
-    _, vix_data, vix_close, vix_pct = fetch_weekly_data('^VIX')         
-    _, tnx_data, tnx_close, tnx_pct = fetch_weekly_data('^TNX')         
-    _, dxy_data, dxy_close, dxy_pct = fetch_weekly_data('DX-Y.NYB')
+    # Fetch Data
+    sp_dates, sp_data, sp_close, sp_pct, _ = fetch_weekly_data('^GSPC')    
+    _, nd_data, nd_close, nd_pct, _ = fetch_weekly_data('^IXIC')           
+    _, dj_data, dj_close, dj_pct, dj_abs = fetch_weekly_data('^DJI')            
+    _, rut_data, rut_close, rut_pct, _ = fetch_weekly_data('^RUT')            
+    _, vix_data, vix_close, vix_pct, _ = fetch_weekly_data('^VIX')         
+    _, tnx_data, tnx_close, tnx_pct, tnx_abs = fetch_weekly_data('^TNX') 
+    _, irx_data, irx_close, irx_pct, irx_abs = fetch_weekly_data('^IRX')        
+    _, dxy_data, dxy_close, dxy_pct, _ = fetch_weekly_data('DX-Y.NYB')
 
-    # 2. Fetch Crypto
-    _, _, btc_close, btc_pct = fetch_weekly_data('BTC-USD')      
-    _, _, eth_close, eth_pct = fetch_weekly_data('ETH-USD')      
-    _, _, sol_close, sol_pct = fetch_weekly_data('SOL-USD')
-    _, _, xrp_close, xrp_pct = fetch_weekly_data('XRP-USD')
+    # Commodities & Crypto
+    _, _, gold_close, gold_pct, _ = fetch_weekly_data('GC=F')
+    _, _, oil_close, oil_pct, _ = fetch_weekly_data('CL=F')
+    _, _, btc_close, btc_pct, _ = fetch_weekly_data('BTC-USD')      
+    _, _, eth_close, eth_pct, _ = fetch_weekly_data('ETH-USD')      
+    _, _, sol_close, sol_pct, _ = fetch_weekly_data('SOL-USD')
+    _, _, xrp_close, xrp_pct, _ = fetch_weekly_data('XRP-USD')
 
-    # 3. Fetch Global
-    _, _, n225_close, n225_pct = fetch_weekly_data('^N225')
-    _, _, stoxx_close, stoxx_pct = fetch_weekly_data('^STOXX50E')
+    # Global
+    _, _, n225_close, n225_pct, _ = fetch_weekly_data('^N225')
+    _, _, stoxx_close, stoxx_pct, _ = fetch_weekly_data('^STOXX50E')
 
-    # 4. Fetch & Sort Sectors
+    # Fetch & Sort Sectors
     sectors = {
         'Technology (XLK)': 'XLK', 'Financials (XLF)': 'XLF',
         'Energy (XLE)': 'XLE', 'Healthcare (XLV)': 'XLV',
@@ -73,7 +83,7 @@ def generate_html():
     }
     sector_perf = {}
     for name, ticker in sectors.items():
-        _, _, _, pct = fetch_weekly_data(ticker)
+        _, _, _, pct, _ = fetch_weekly_data(ticker)
         sector_perf[name] = pct
     
     sorted_sectors = sorted(sector_perf.items(), key=lambda x: x[1], reverse=True)
@@ -81,51 +91,78 @@ def generate_html():
     bottom_sectors = sorted_sectors[-4:]
 
     # Formatting Helpers
-    def fmt_chg(pct, is_yield=False):
+    def fmt_chg(pct, abs_val=None, is_yield=False, is_points=False):
         sign = "+" if pct >= 0 else ""
         color = "pos" if pct >= 0 else "neg"
         arrow = "▲" if pct >= 0 else "▼"
-        suffix = " bps" if is_yield else "%"
-        return f'<div class="t-chg {color}">{arrow} {sign}{pct}{suffix} This Week</div>'
         
-    def fmt_card_chg(pct):
-        sign = "+" if pct >= 0 else ""
-        color = "pos" if pct >= 0 else "neg"
-        arrow = "▲" if pct >= 0 else "▼"
-        return f'<div class="idx-wtd {color}">{arrow} {sign}{pct}% This Week</div>'
+        if is_yield and abs_val is not None:
+            bps = int(abs_val * 100) if abs_val < 10 else int(abs_val * 10)
+            return f'<div class="t-chg {color}">{arrow} {sign}{bps} bps WTD</div>'
+        elif is_points and abs_val is not None:
+            return f'<div class="t-chg {color}">{arrow} {sign}{int(abs_val)} pts WTD</div>'
+        else:
+            return f'<div class="t-chg {color}">{arrow} {sign}{pct}% WTD</div>'
 
-    # Dynamic tone and borders
+    # Build Ticker Track Items (Added Gold, Crude Oil, Russell 2000 for a richer scroll)
+    def get_t_item(name, val, pct, is_yield=False, abs_val=None, is_points=False):
+        return f'''
+        <div class="t-item">
+          <div class="t-name">{name}</div>
+          <div class="t-val">{val}</div>
+          {fmt_chg(pct, abs_val=abs_val, is_yield=is_yield, is_points=is_points)}
+        </div>'''
+
+    t_items = ""
+    t_items += get_t_item("S&P 500", f"{sp_close:,.2f}", sp_pct)
+    t_items += get_t_item("Nasdaq", f"{nd_close:,.2f}", nd_pct)
+    t_items += get_t_item("DJIA", f"{dj_close:,.2f}", dj_pct, abs_val=dj_abs, is_points=True)
+    t_items += get_t_item("Russell 2000", f"{rut_close:,.2f}", rut_pct)
+    t_items += get_t_item("Crude Oil", f"${oil_close:,.2f}", oil_pct)
+    t_items += get_t_item("Gold", f"${gold_close:,.2f}", gold_pct)
+    t_items += get_t_item("VIX", f"{vix_close:,.2f}", vix_pct)
+    t_items += get_t_item("Bitcoin", f"${btc_close:,.0f}", btc_pct)
+    t_items += get_t_item("Ethereum", f"${eth_close:,.0f}", eth_pct)
+    t_items += get_t_item("10-Yr Yield", f"{tnx_close:,.2f}%", tnx_pct, abs_val=tnx_abs, is_yield=True)
+
+    # Duplicate items twice to ensure a seamless infinite CSS scroll
+    ticker_html = f'<div class="ticker-wrapper"><div class="ticker-track">{t_items}{t_items}</div></div>'
+
+    # Dynamic Tone and Badges
+    market_tone = "▲ Risk-On / Rally" if sp_pct >= 0 else "⬇ Risk-Off / Pullback"
+    badge_color = "badge-green" if sp_pct >= 0 else "badge-red"
+    
     sp_card_class = "up" if sp_pct >= 0 else ""
     nd_card_class = "up" if nd_pct >= 0 else ""
     dj_card_class = "up" if dj_pct >= 0 else ""
-    
-    market_tone = "▲ Risk-On / Rally" if sp_pct >= 0 else "⬇ Risk-Off / Pullback"
-    badge_color = "badge-green" if sp_pct >= 0 else "badge-red"
 
-    # Build Top/Bottom Sector Tags
     top_tags = "".join([f'<span class="tag g">{s[0]} ({"+" if s[1]>=0 else ""}{s[1]}%)</span>' for s in top_sectors])
     bot_tags = "".join([f'<span class="tag r">{s[0]} ({"+" if s[1]>=0 else ""}{s[1]}%)</span>' for s in bottom_sectors])
 
-    # FIX: Context-aware sector narrative based on whether bottom sectors are actually negative
-    if bottom_sectors[0][1] < 0:
-        lag_bullet_1 = f'<strong>{bottom_sectors[0][0]}</strong> lagged the broader market, absorbing the heaviest selling pressure over the 5-day period.'
-        lag_bullet_2 = f'{bottom_sectors[1][0]} also faced structural headwinds, underperforming relative to the core index benchmarks.'
+    # Dynamic Institutional Takeaway Generator
+    if sp_pct >= 0:
+        if tnx_pct > 0:
+            takeaway_text = f"The broader market demonstrated impressive resilience this week, advancing despite a backup in Treasury yields. Capital continued to flow into risk assets, signaling that underlying economic growth expectations are currently overpowering interest rate fears. The structural rotation into {top_sectors[0][0]} and {top_sectors[1][0]} suggests institutional participants remain constructive, choosing to buy dips and reallocate rather than retreat to cash."
+        else:
+            takeaway_text = f"A highly constructive week for risk assets as easing Treasury yields provided a strong macroeconomic tailwind for equity valuations. The market's tone remained firmly risk-on, with capital actively seeking yield and momentum. Institutional flows heavily favored {top_sectors[0][0]}, reinforcing the narrative that portfolio managers are comfortable extending risk exposure in a supportive liquidity environment."
     else:
-        lag_bullet_1 = f'<strong>{bottom_sectors[0][0]}</strong> was the relative underperformer this week, trailing the broader index despite posting positive absolute returns.'
-        lag_bullet_2 = f'{bottom_sectors[1][0]} also trailed the broader market on a relative basis, finishing as one of the weakest sectors of the week.'
+        if vix_close >= 20:
+            takeaway_text = f"This week's price action was characterized by a sharp defensive rotation and a spike in hedging activity, with the VIX pushing to {vix_close:,.2f}. Investors aggressively de-risked portfolios, shedding exposure in {bottom_sectors[0][0]} and moving capital toward the relative safety of {top_sectors[0][0]}. The dominant theme was capital preservation as the market rapidly recalibrated to shifting macroeconomic headwinds."
+        else:
+            takeaway_text = f"The market experienced a methodical, orderly pullback this week rather than outright panic. With the VIX remaining relatively subdued at {vix_close:,.2f}, the price action reflected healthy profit-taking and a rotation out of extended valuations. Portfolio managers tactically trimmed {bottom_sectors[0][0]} while hiding out in {top_sectors[0][0]}, signaling a cautious 'wait-and-see' approach rather than a structural shift to bearishness."
 
-    # Build Mega-Cap Rows Dynamically
+    # Mega-Cap Rows
     mega_caps = {'AAPL': 'Apple', 'MSFT': 'Microsoft', 'NVDA': 'Nvidia', 'AMZN': 'Amazon', 'META': 'Meta Platforms'}
     mega_cap_html = ""
     for tk, name in mega_caps.items():
-        _, _, c_close, c_pct = fetch_weekly_data(tk)
+        _, _, c_close, c_pct, _ = fetch_weekly_data(tk)
         c_color = "pos" if c_pct >= 0 else "neg"
         c_arrow = "▲" if c_pct >= 0 else "▼"
         c_sign = "+" if c_pct >= 0 else ""
         mega_cap_html += f'''
         <div class="co-row">
           <span class="tkr">{tk}</span>
-          <div class="co-desc"><strong>{name}</strong> closed the week at ${c_close:,.2f}. As a core mega-cap constituent, its {c_sign}{c_pct}% weekly move heavily influenced the broader technology sector and market cap-weighted indices.</div>
+          <div class="co-desc"><strong>{name}</strong> closed the week at ${c_close:,.2f}. As a core mega-cap weight, its {c_sign}{c_pct}% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
           <span class="co-mv {c_color}">{c_arrow} {c_sign}{c_pct}%</span>
         </div>'''
 
@@ -164,11 +201,22 @@ def generate_html():
   ::-webkit-scrollbar-thumb {{ background: var(--surface2); border-radius: 4px; }}
   ::-webkit-scrollbar-thumb:hover {{ background: var(--muted); }}
 
-  .masthead {{ padding: 52px 64px 40px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }}
-  .masthead::before {{ content: ''; position: absolute; top: -80px; right: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(232,200,74,0.055) 0%, transparent 65%); pointer-events: none; }}
-  .masthead-row {{ display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px; }}
-  .kicker {{ font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }}
-  .week-title {{ font-family: 'Playfair Display', serif; font-size: clamp(30px, 4.5vw, 54px); font-weight: 900; line-height: 1.05; letter-spacing: -0.025em; color: #fff; }}
+  /* STICKY HEADER AND TICKER */
+  .top-nav-wrapper {{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(9, 9, 15, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }}
+
+  .masthead {{ padding: 32px 64px 24px; position: relative; overflow: hidden; }}
+  .masthead::before {{ content: ''; position: absolute; top: -80px; right: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(232,200,74,0.06) 0%, transparent 65%); pointer-events: none; }}
+  .masthead-row {{ display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 24px; }}
+  .kicker {{ font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }}
+  .week-title {{ font-family: 'Playfair Display', serif; font-size: clamp(26px, 3.5vw, 42px); font-weight: 900; line-height: 1.05; letter-spacing: -0.025em; color: #fff; }}
   .week-title span {{ color: var(--accent); }}
   .masthead-meta {{ text-align: right; }}
   .badge {{ display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; padding: 5px 12px; border-radius: 2px; margin-bottom: 8px; }}
@@ -176,18 +224,53 @@ def generate_html():
   .badge-green {{ background: rgba(61,214,140,0.1); border: 1px solid rgba(61,214,140,0.28); color: var(--green); }}
   .pub-date {{ font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }}
 
-  /* FIX: Added justify-content: center to center the ticker bar items */
-  .ticker-bar {{ background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 64px; display: flex; gap: 36px; flex-wrap: wrap; align-items: center; justify-content: center; }}
-  .t-item {{ display: flex; flex-direction: column; gap: 2px; }}
+  /* SCROLLING TICKER CSS */
+  .ticker-wrapper {{
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    background: rgba(16, 18, 26, 0.5);
+  }}
+  .ticker-track {{
+    display: inline-flex;
+    align-items: center;
+    animation: scrollTicker 45s linear infinite;
+  }}
+  .ticker-track:hover {{
+    animation-play-state: paused;
+  }}
+  @keyframes scrollTicker {{
+    0% {{ transform: translateX(0); }}
+    100% {{ transform: translateX(-50%); }}
+  }}
+  .t-item {{
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 36px;
+    min-width: max-content;
+    position: relative;
+  }}
+  .t-item::after {{
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 38px;
+    background: var(--border);
+  }}
   .t-name {{ font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }}
   .t-val {{ font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; color: #fff; }}
   .t-chg {{ font-family: 'IBM Plex Mono', monospace; font-size: 10px; }}
   .neg {{ color: var(--red); }} .pos {{ color: var(--green); }}
-  .vdiv {{ width: 1px; height: 38px; background: var(--border); }}
 
   .container {{ max-width: 1120px; margin: 0 auto; padding: 0 64px 90px; }}
   .section {{ margin-top: 60px; padding-top: 56px; border-top: 1px solid var(--border); }}
-  .section:first-child {{ border-top: none; padding-top: 0; }}
+  .section:first-child {{ border-top: none; padding-top: 40px; margin-top: 20px; }}
   .sec-label {{ font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }}
   .sec-title {{ font-family: 'Playfair Display', serif; font-size: 23px; font-weight: 700; color: #fff; margin-bottom: 28px; }}
 
@@ -255,70 +338,33 @@ def generate_html():
   .footer-txt {{ font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--muted); letter-spacing: 0.04em; }}
 
   @media(max-width:780px){{
-    .masthead,.ticker-bar,.container,.footer{{padding-left:20px;padding-right:20px;}}
+    .masthead,.container,.footer{{padding-left:20px;padding-right:20px;}}
     .idx-grid,.two-col,.crypto-grid,.ahead-grid{{grid-template-columns:1fr;}}
+    .masthead-row {{ align-items: flex-start; flex-direction: column; gap: 16px; }}
   }}
 </style>
 </head>
 <body>
 
-<!-- MASTHEAD -->
-<div class="masthead">
-  <div class="masthead-row">
-    <div>
-      <div class="kicker">Weekly Market Summary · U.S. Equities &amp; Digital Assets</div>
-      <div class="week-title">{week_start_str} – <span>{today_str}</span>, {year_str}</div>
+<!-- STICKY HEADER & TICKER -->
+<div class="top-nav-wrapper">
+  <div class="masthead">
+    <div class="masthead-row">
+      <div>
+        <div class="kicker">Weekly Market Summary · U.S. Equities &amp; Digital Assets</div>
+        <div class="week-title">{week_start_str} – <span>{today_str}</span>, {year_str}</div>
+      </div>
+      <div class="masthead-meta">
+        <div class="badge {badge_color}">{market_tone}</div>
+        <div class="pub-date">Published {full_date} · Post Market Close</div>
+      </div>
     </div>
-    <div class="masthead-meta">
-      <div class="badge {badge_color}">{market_tone}</div>
-      <div class="pub-date">Published {full_date} · Post Market Close</div>
-    </div>
   </div>
-</div>
-
-<!-- TICKER BAR -->
-<div class="ticker-bar">
-  <div class="t-item">
-    <div class="t-name">S&amp;P 500</div>
-    <div class="t-val">{sp_close:,.2f}</div>
-    {fmt_chg(sp_pct)}
-  </div>
-  <div class="vdiv"></div>
-  <div class="t-item">
-    <div class="t-name">Nasdaq</div>
-    <div class="t-val">{nd_close:,.2f}</div>
-    {fmt_chg(nd_pct)}
-  </div>
-  <div class="vdiv"></div>
-  <div class="t-item">
-    <div class="t-name">DJIA</div>
-    <div class="t-val">{dj_close:,.2f}</div>
-    {fmt_chg(dj_pct)}
-  </div>
-  <div class="vdiv"></div>
-  <div class="t-item">
-    <div class="t-name">VIX</div>
-    <div class="t-val">{vix_close:,.2f}</div>
-    {fmt_chg(vix_pct)}
-  </div>
-  <div class="vdiv"></div>
-  <div class="t-item">
-    <div class="t-name">Bitcoin</div>
-    <div class="t-val">${btc_close:,.0f}</div>
-    {fmt_chg(btc_pct)}
-  </div>
-  <div class="vdiv"></div>
-  <div class="t-item">
-    <div class="t-name">10-Yr Yield</div>
-    <div class="t-val">{tnx_close:,.2f}%</div>
-    {fmt_chg(tnx_pct, is_yield=True)}
-  </div>
+  {ticker_html}
 </div>
 
 <div class="container">
-
-  <!-- ① INDICES -->
-  <div class="section" style="margin-top:52px;padding-top:0;border-top:none;">
+  <div class="section">
     <div class="sec-label">Section 01</div>
     <div class="sec-title">Major U.S. Indices</div>
 
@@ -326,30 +372,29 @@ def generate_html():
       <div class="idx-card {sp_card_class}">
         <div class="idx-name">S&amp;P 500</div>
         <div class="idx-close">{sp_close:,.2f}</div>
-        {fmt_card_chg(sp_pct)}
+        <div class="idx-wtd {'pos' if sp_pct >= 0 else 'neg'}">{"▲" if sp_pct >= 0 else "▼"} {"+" if sp_pct >= 0 else ""}{sp_pct}% WTD</div>
         <div class="idx-note">Reflects broad market performance across the 500 largest U.S. publicly traded companies.</div>
       </div>
       <div class="idx-card {nd_card_class}">
         <div class="idx-name">Nasdaq Composite</div>
         <div class="idx-close">{nd_close:,.2f}</div>
-        {fmt_card_chg(nd_pct)}
+        <div class="idx-wtd {'pos' if nd_pct >= 0 else 'neg'}">{"▲" if nd_pct >= 0 else "▼"} {"+" if nd_pct >= 0 else ""}{nd_pct}% WTD</div>
         <div class="idx-note">Tech-heavy index heavily influenced by mega-cap growth and semiconductor equities.</div>
       </div>
       <div class="idx-card {dj_card_class}">
         <div class="idx-name">Dow Jones Industrial Avg.</div>
         <div class="idx-close">{dj_close:,.2f}</div>
-        {fmt_card_chg(dj_pct)}
+        <div class="idx-wtd {'pos' if dj_pct >= 0 else 'neg'}">{"▲" if dj_pct >= 0 else "▼"} {"+" if dj_abs >= 0 else ""}{int(dj_abs)} pts WTD</div>
         <div class="idx-note">Price-weighted index representing 30 prominent blue-chip U.S. corporations.</div>
       </div>
     </div>
     
     <ul class="blist">
-      <li><strong>Market Tone:</strong> U.S. equities finished the week {"higher" if sp_pct >= 0 else "lower"}, with the S&P 500 recording a {sp_pct}% move.</li>
+      <li><strong>Market Tone:</strong> U.S. equities finished the week {"higher" if sp_pct >= 0 else "lower"}, with the S&P 500 recording a {"+" if sp_pct >= 0 else ""}{sp_pct}% move.</li>
       <li><strong>Volatility Profile:</strong> The VIX closed the week at {vix_close:,.2f}. Levels below 20 generally indicate a calmer equity environment, while prints above 20 signal elevated hedging activity.</li>
     </ul>
   </div>
 
-  <!-- ② SECTORS -->
   <div class="section">
     <div class="sec-label">Section 02</div>
     <div class="sec-title">Sector Performance</div>
@@ -367,14 +412,13 @@ def generate_html():
         <div class="col-lbl lag">▼ Lagging Sectors</div>
         <div class="tag-row">{bot_tags}</div>
         <ul class="blist">
-          <li>{lag_bullet_1}</li>
-          <li>{lag_bullet_2}</li>
+          <li><strong>{bottom_sectors[0][0]}</strong> lagged the broader market, absorbing the heaviest selling pressure over the 5-day period.</li>
+          <li>{bottom_sectors[1][0]} also faced structural headwinds, underperforming relative to the core index benchmarks.</li>
         </ul>
       </div>
     </div>
   </div>
 
-  <!-- ③ MACRO -->
   <div class="section">
     <div class="sec-label">Section 03</div>
     <div class="sec-title">Key Macro &amp; Rates Data</div>
@@ -383,7 +427,7 @@ def generate_html():
       <div class="dcell">
         <div class="dc-lbl">10-Yr Treasury Yield</div>
         <div class="dc-val {'hot' if tnx_pct >= 0 else 'cool'}">{tnx_close:,.2f}%</div>
-        <div class="dc-note">Yield {"rose" if tnx_pct >= 0 else "fell"} by {abs(tnx_pct)} bps this week, acting as a primary driver for broader equity valuations and sector rotation.</div>
+        <div class="dc-note">Yield {"rose" if tnx_pct >= 0 else "fell"} WTD, acting as a primary driver for broader equity valuations and sector rotation.</div>
       </div>
       <div class="dcell">
         <div class="dc-lbl">U.S. Dollar Index (DXY)</div>
@@ -391,24 +435,21 @@ def generate_html():
         <div class="dc-note">The Dollar {"strengthened" if dxy_pct >= 0 else "weakened"} by {abs(dxy_pct)}% over the 5-day period, impacting multinational revenue expectations.</div>
       </div>
       <div class="dcell">
-        <div class="dc-lbl">Volatility Index (VIX)</div>
-        <div class="dc-val {'hot' if vix_close >= 20 else 'cool'}">{vix_close:,.2f}</div>
-        <div class="dc-note">A weekly change of {vix_pct}%. Currently trading in the {"Fear/Hedging Zone" if vix_close >= 20 else "Normal/Calm Zone"}, reflecting institutional positioning.</div>
+        <div class="dc-lbl">13-Week T-Bill Yield</div>
+        <div class="dc-val">{irx_close:,.2f}%</div>
+        <div class="dc-note">Tracks closely with the Federal Funds Rate. Yield moved by {abs(irx_pct)}% this week.</div>
       </div>
     </div>
   </div>
 
-  <!-- ④ COMPANIES -->
   <div class="section">
     <div class="sec-label">Section 04</div>
     <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
-
     <div style="margin-bottom:20px;">
       {mega_cap_html}
     </div>
   </div>
 
-  <!-- ⑤ CRYPTO -->
   <div class="section">
     <div class="sec-label">Section 05</div>
     <div class="sec-title">Cryptocurrency Market Recap</div>
@@ -437,7 +478,6 @@ def generate_html():
     </div>
   </div>
 
-  <!-- ⑥ GLOBAL -->
   <div class="section">
     <div class="sec-label">Section 06</div>
     <div class="sec-title">Global Market Context</div>
@@ -465,16 +505,14 @@ def generate_html():
     </table>
   </div>
 
-  <!-- ⑦ TAKEAWAY -->
   <div class="section">
     <div class="sec-label">Section 07</div>
     <div class="sec-title">Investor Takeaway</div>
     <div class="takeaway">
-      U.S. equities finished the week <strong>{'higher' if sp_pct >= 0 else 'lower'}</strong>, with the S&P 500 registering a {sp_pct}% change, while the tech-heavy Nasdaq moved {nd_pct}%. Market internals showed capital flowing heavily into {top_sectors[0][0]} and {top_sectors[1][0]}, establishing them as the clear leaders for the week. Conversely, {bottom_sectors[0][0]} was the relative underperformer{"" if bottom_sectors[0][1] >= 0 else ", facing the most sustained selling pressure"}. In the fixed-income market, the 10-Year Treasury yield closed at {tnx_close}%, and the VIX volatility index settled at {vix_close}. In the digital asset space, Bitcoin moved {btc_pct}% over the last 5 days to close the traditional trading week near ${btc_close:,.0f}.
+      {takeaway_text}
     </div>
   </div>
 
-  <!-- ⑧ AHEAD -->
   <div class="section">
     <div class="sec-label">Section 08</div>
     <div class="sec-title">Looking Ahead to Next Week</div>
@@ -491,7 +529,6 @@ def generate_html():
     </div>
   </div>
 
-  <!-- ⑨ CHART -->
   <div class="section">
     <div class="sec-label">Section 09</div>
     <div class="sec-title">S&amp;P 500 — Daily Close ({week_start_str}–{today_str}, {year_str})</div>
@@ -506,7 +543,6 @@ def generate_html():
 
 </div>
 
-<!-- FOOTER -->
 <div class="footer">
   <div class="footer-txt">Automated Market Summary · Post Market Close Edition</div>
   <div class="footer-txt">Live Data Sourced via YFinance API · {full_date}</div>
@@ -514,11 +550,16 @@ def generate_html():
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-// Injected Dynamic Data from Python
 const labels = {json.dumps(sp_dates)};
 const prices = {json.dumps(sp_data)};
 
 const ctx = document.getElementById('spxChart').getContext('2d');
+
+// Dynamic Min/Max calculation so the chart line isn't artificially flat
+const minPrice = Math.min(...prices);
+const maxPrice = Math.max(...prices);
+const yPadding = (maxPrice - minPrice) * 0.15 || maxPrice * 0.01;
+
 new Chart(ctx, {{
   type: 'line',
   data: {{
@@ -573,6 +614,8 @@ new Chart(ctx, {{
       }},
       y: {{
         position: 'right',
+        min: Math.floor(minPrice - yPadding),
+        max: Math.ceil(maxPrice + yPadding),
         grid: {{ color: 'rgba(255,255,255,0.045)', drawBorder: false }},
         ticks: {{
           color: '#5c6480', font: {{ family: 'IBM Plex Mono', size: 10 }},
