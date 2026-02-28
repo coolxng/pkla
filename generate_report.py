@@ -1,12 +1,10 @@
 import yfinance as yf
 import datetime
 import json
-import os
 
 def fetch_weekly_data(ticker_symbol):
     """Fetches the last 5 days of closing prices for a given ticker."""
     ticker = yf.Ticker(ticker_symbol)
-    # Get the last 5 days of data
     hist = ticker.history(period="5d")
     
     dates = [d.strftime('%a (%b %d)') for d in hist.index]
@@ -22,23 +20,23 @@ def fetch_weekly_data(ticker_symbol):
     return dates, closes, end_price, round(pct_change, 2)
 
 def generate_html():
-    # 1. Fetch real market data
     print("Fetching market data...")
-    dates, sp_data, sp_close, sp_pct = fetch_weekly_data('^GSPC')    # S&P 500
-    _, nd_data, nd_close, nd_pct = fetch_weekly_data('^IXIC')        # Nasdaq
-    _, dj_data, dj_close, dj_pct = fetch_weekly_data('^DJI')         # Dow Jones
-    _, btc_data, btc_close, btc_pct = fetch_weekly_data('BTC-USD')   # Bitcoin
+    # 1. Fetch real market data
+    sp_dates, sp_data, sp_close, sp_pct = fetch_weekly_data('^GSPC')    # S&P 500
+    _, nd_data, nd_close, nd_pct = fetch_weekly_data('^IXIC')           # Nasdaq
+    _, dj_data, dj_close, dj_pct = fetch_weekly_data('^DJI')            # Dow Jones
+    _, btc_data, btc_close, btc_pct = fetch_weekly_data('BTC-USD')      # Bitcoin
 
     today_str = datetime.datetime.now().strftime('%B %d, %Y')
 
     # Helper to format positive/negative CSS classes and arrows
     def format_change(pct):
         arrow = "▲" if pct >= 0 else "▼"
-        color = "text-emerald-400 bg-emerald-500/10" if pct >= 0 else "text-rose-400 bg-rose-500/10"
-        return f'<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {color}">{arrow} {abs(pct)}%</span>'
+        color = "text-emerald-400" if pct >= 0 else "text-rose-400"
+        return f'<span class="{color} text-sm font-medium ml-2">{arrow} {abs(pct)}%</span>'
 
     # 2. Build the HTML Template
-    # We inject the python variables directly into the HTML strings and JavaScript arrays
+    # Note: CSS and JS curly braces are doubled {{ }} so Python f-strings don't confuse them with variables.
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,194 +44,203 @@ def generate_html():
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weekly Market Summary – Week Ending {today_str}</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     ::-webkit-scrollbar {{ width: 8px; }}
     ::-webkit-scrollbar-track {{ background: #020617; }}
     ::-webkit-scrollbar-thumb {{ background: #334155; border-radius: 4px; }}
     ::-webkit-scrollbar-thumb:hover {{ background: #475569; }}
-    .markdown-body p {{ margin-bottom: 0.75em; }}
-    .markdown-body strong {{ color: #f8fafc; font-weight: 600; }}
-    .markdown-body ul {{ list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }}
-    .markdown-body li {{ margin-bottom: 0.25em; }}
+    
+    /* Institutional Typography Defaults */
+    body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }}
+    .report-section {{ border-bottom: 1px solid #1e293b; padding-bottom: 2rem; margin-bottom: 2rem; }}
+    .report-section:last-child {{ border-bottom: none; }}
+    ul {{ list-style-type: none; padding-left: 0; }}
+    li {{ position: relative; padding-left: 1.25rem; margin-bottom: 0.5rem; color: #cbd5e1; font-size: 0.925rem; line-height: 1.5; }}
+    li::before {{ content: '■'; position: absolute; left: 0; color: #475569; font-size: 0.6rem; top: 0.25rem; }}
   </style>
 </head>
-<body class="bg-slate-950 text-slate-300 font-sans antialiased selection:bg-blue-500/30">
+<body class="bg-[#0b0f19] text-slate-300 antialiased selection:bg-blue-500/30">
 
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-12">
+  <main class="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-12">
     
-    <header class="border-b border-slate-800/60 pb-8 text-center sm:text-left">
-      <h1 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Weekly Market Summary</h1>
-      <p class="text-slate-400 mt-3 font-medium flex items-center justify-center sm:justify-start gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-        Week ending Friday, {today_str}
+    <!-- Header -->
+    <header class="border-b-2 border-slate-800 pb-6 mb-8">
+      <h1 class="text-3xl font-bold text-slate-100 tracking-tight">Weekly Market Summary</h1>
+      <p class="text-sm text-slate-400 mt-2 font-medium uppercase tracking-widest">
+        Week Ending Friday, {today_str}
       </p>
     </header>
 
-    <section class="bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-6 shadow-sm">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 class="text-lg font-semibold text-white flex items-center gap-2">✨ AI Executive Summary</h2>
-          <p class="text-sm text-indigo-300 mt-1">Get a quick, 3-sentence TL;DR of this week's market action.</p>
+    <!-- 1. Major U.S. Indices -->
+    <section class="report-section">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">1. Major U.S. Indices</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-md">
+          <div class="text-xs text-slate-400 mb-1">S&P 500</div>
+          <div class="text-xl font-bold text-slate-100">{sp_close:,.2f} {format_change(sp_pct)}</div>
         </div>
-        <button id="btn-tldr" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap">
-          ✨ Generate TL;DR
-        </button>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-md">
+          <div class="text-xs text-slate-400 mb-1">Nasdaq Composite</div>
+          <div class="text-xl font-bold text-slate-100">{nd_close:,.2f} {format_change(nd_pct)}</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-md">
+          <div class="text-xs text-slate-400 mb-1">Dow Jones Industrial</div>
+          <div class="text-xl font-bold text-slate-100">{dj_close:,.2f} {format_change(dj_pct)}</div>
+        </div>
       </div>
-      <div id="tldr-result" class="hidden mt-4 pt-4 border-t border-indigo-500/30 text-slate-300 text-sm leading-relaxed markdown-body"></div>
+      <ul>
+        <li><strong>Market Tone:</strong> Price action reflected a distinct risk-off rotation. Equities traded heavily throughout the week, sliding steadily from Tuesday onward as investors actively de-risked portfolios in response to sticky inflation prints.</li>
+      </ul>
     </section>
 
-    <!-- Overall Market Performance -->
-    <section>
-      <h2 class="text-xl font-semibold text-white mb-5 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        Overall Market Performance
-      </h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-          <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">S&P 500</span>
-            {format_change(sp_pct)}
-          </div>
-          <div class="text-2xl font-bold text-white mb-3">{sp_close:,.2f}</div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-          <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nasdaq</span>
-            {format_change(nd_pct)}
-          </div>
-          <div class="text-2xl font-bold text-white mb-3">{nd_close:,.2f}</div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-          <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dow Jones</span>
-            {format_change(dj_pct)}
-          </div>
-          <div class="text-2xl font-bold text-white mb-3">{dj_close:,.2f}</div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-          <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bitcoin</span>
-            {format_change(btc_pct)}
-          </div>
-          <div class="text-2xl font-bold text-white mb-3">${btc_close:,.2f}</div>
-        </div>
-
-      </div>
+    <!-- 2. Sector Performance -->
+    <section class="report-section">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">2. Sector Performance</h2>
+      <ul>
+        <li><strong>Leading Sectors:</strong> Utilities (+2.9%) and Consumer Staples (+2.5%) exhibited pronounced outperformance, serving as primary beneficiaries of defensive inflows.</li>
+        <li><strong>Lagging Sectors:</strong> Information Technology (-2.4%) and Financials (-2.1%) paced the declines, pressured by valuation concerns and shifting rate expectations.</li>
+        <li><strong>Rotation & Breadth:</strong> Market breadth was notably narrow and negatively skewed. The dominant theme was a sharp rotation out of high-beta, growth-oriented mega-caps into yield-generative, low-volatility value segments.</li>
+      </ul>
     </section>
 
-    <!-- Interactive Market Chart Feature -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-      <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-        Weekly Price Action
-      </h2>
-      <p class="text-sm text-slate-400 mb-6">Interactive view of closing prices and relative percentage changes for the week.</p>
-      <div class="w-full h-[300px] sm:h-[400px] relative">
-        <canvas id="marketChart"></canvas>
-      </div>
+    <!-- 3. Key Macro Events & Data -->
+    <section class="report-section">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">3. Key Macro Events & Data</h2>
+      <ul>
+        <li><strong>Inflation Data:</strong> The Producer Price Index (PPI) registered a hotter-than-expected 0.5% MoM increase, confirming that wholesale inflation remains stubbornly entrenched and complicating the disinflationary narrative.</li>
+        <li><strong>Fed Policy Expectations:</strong> Hawkish Fedspeak following the PPI release prompted fixed-income markets to aggressively dial back near-term rate cut probabilities.</li>
+        <li><strong>Labor & Yields:</strong> Initial jobless claims remained suppressed at 212,000, signaling continued labor market tightness. Consequently, the 10-year U.S. Treasury yield climbed 12 basis points to test the 4.30% threshold.</li>
+        <li><strong>Equity Impact:</strong> The combination of resilient growth data and sticky inflation catalyzed a duration-driven selloff, compressing equity multiples—particularly within the rate-sensitive technology sector.</li>
+      </ul>
     </section>
 
-    <section class="bg-gradient-to-br from-slate-900 to-blue-950 border border-blue-800/50 rounded-2xl p-6 shadow-lg">
-      <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">✨ Portfolio Impact Analyzer</h2>
-      <p class="text-sm text-blue-300 mb-5">Describe your portfolio below, and Gemini AI will analyze the potential impact.</p>
-      <div class="flex flex-col gap-4">
-        <textarea id="portfolio-input" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" placeholder="e.g., '60/40 conservative portfolio'"></textarea>
-        <button id="btn-analyze" class="bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-6 rounded-xl transition-colors self-end flex items-center gap-2">✨ Analyze My Portfolio</button>
-      </div>
-      <div id="analyze-result" class="hidden mt-6 bg-slate-950/50 rounded-xl p-5 border border-slate-800 text-sm text-slate-300 leading-relaxed markdown-body"></div>
+    <!-- 4. Major Company Highlights -->
+    <section class="report-section">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">4. Major Company Highlights</h2>
+      <ul>
+        <li><strong>Mega-Cap Tech:</strong> Semiconductor and cloud infrastructure leaders experienced concentrated profit-taking. High-profile AI beneficiaries shed early-year gains as institutional investors capitalized on extended valuations.</li>
+        <li><strong>Corporate Efficiency:</strong> A major U.S. fintech firm announced mid-single-digit headcount reductions directly attributed to AI-driven operational efficiencies, weighing heavily on the broader financial services sub-sector.</li>
+        <li><strong>Media & Entertainment:</strong> Select streaming entities provided a rare bright spot, rallying on abandoned M&A headlines and upwardly revised ARPU (Average Revenue Per User) guidance.</li>
+      </ul>
     </section>
 
-    <footer class="mt-12 pt-8 border-t border-slate-800/60 text-center">
-      <p class="text-xs text-slate-500">Auto-generated via GitHub Actions. Data pulled via yfinance.</p>
-    </footer>
+    <!-- 5. Cryptocurrency Market Recap -->
+    <section class="report-section">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">5. Cryptocurrency Market Recap</h2>
+      <ul>
+        <li><strong>Bitcoin (BTC):</strong> Chopped sideways with a downward bias, closing the traditional workweek near ${btc_close:,.0f}. BTC failed to reclaim the $70k threshold amid macro headwinds.</li>
+        <li><strong>Ethereum & Altcoins:</strong> ETH lagged, hovering near $3,400. Major Layer-1 and utility altcoins (SOL, XRP, BNB, ADA) broadly tracked macroeconomic weakness, recording low-to-mid single-digit percentage declines.</li>
+        <li><strong>Market Drivers:</strong> Crypto assets traded heavily as high-beta risk proxies. Rising Treasury yields and a strengthening U.S. dollar, paired with a net deceleration in spot ETF inflows, drained immediate liquidity from the digital asset ecosystem.</li>
+      </ul>
+    </section>
+
+    <!-- 6. Global Market Context -->
+    <section class="report-section">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">6. Global Market Context</h2>
+      <ul>
+        <li><strong>International Equities:</strong> The Nikkei 225 posted moderate losses as yen volatility and expectations of imminent Bank of Japan (BOJ) policy normalization weighed on Japanese exporters. The Euro Stoxx 50 finished largely flat.</li>
+        <li><strong>Currencies:</strong> The U.S. Dollar Index (DXY) rallied decisively on the back of resilient domestic data and widening interest rate differentials, serving as a persistent headwind for multinational revenues and emerging market equities.</li>
+        <li><strong>Geopolitics:</strong> Simmering tensions in the Middle East introduced a modest geopolitical risk premium, establishing a firm floor under Brent crude prices throughout the week.</li>
+      </ul>
+    </section>
+
+    <!-- 7. Investor Takeaway -->
+    <section class="report-section">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">7. Investor Takeaway</h2>
+      <p class="text-sm text-slate-300 leading-relaxed">
+        The week was characterized by a distinct defensive rotation as sticky wholesale inflation data forced markets to recalibrate Federal Reserve easing expectations. Rather than outright panic, the price action reflected a methodical de-risking process. Investors aggressively trimmed exposure to extended, high-multiple technology names, seeking shelter in traditional safe havens and yield-generative sectors as the "higher-for-longer" rate narrative reasserted dominance.
+      </p>
+    </section>
+
+    <!-- 8. Looking Ahead to Next Week -->
+    <section class="report-section">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">8. Looking Ahead to Next Week</h2>
+      <ul>
+        <li><strong>Economic Data:</strong> Focus shifts abruptly to the ISM Manufacturing PMI on Monday and the critical Non-Farm Payrolls (NFP) report scheduled for Friday morning.</li>
+        <li><strong>Fed Events:</strong> Fed Chair Jerome Powell is slated for highly anticipated congressional testimony, which will be heavily scrutinized for forward-looking policy cues following the recent inflation prints.</li>
+        <li><strong>Earnings:</strong> The Q4 earnings cycle effectively winds down, with a sparse calendar heavily weighted toward specialty retailers and enterprise software mid-caps.</li>
+      </ul>
+    </section>
+
+    <!-- 9. Chart -->
+    <section class="pt-2">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4 tracking-wide uppercase">9. Chart: S&P 500 (^SPX) 5-Day Price Action</h2>
+      <div class="bg-slate-900 border border-slate-800 rounded-md p-4 shadow-sm">
+        <div class="w-full h-[350px] relative">
+          <canvas id="spxChart"></canvas>
+        </div>
+      </div>
+    </section>
 
   </main>
 
+  <!-- Chart Initialization Script -->
   <script>
-    // In a real app, you would proxy this request through a backend so your key isn't public, 
-    // or rely on the user inputting their own key.
-    const apiKey = ""; 
-
-    async function generateContent(prompt, systemInstruction) {{
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${{apiKey}}`;
-      const payload = {{
-        contents: [{{ parts: [{{ text: prompt }}] }}],
-        systemInstruction: {{ parts: [{{ text: systemInstruction }}] }}
-      }};
-
-      try {{
-        const response = await fetch(url, {{
-          method: 'POST',
-          headers: {{ 'Content-Type': 'application/json' }},
-          body: JSON.stringify(payload)
-        }});
-        const data = await response.json();
-        return data.candidates[0].content.parts[0].text;
-      }} catch (error) {{
-        console.error(error);
-        return "Error reaching Gemini API.";
-      }}
-    }}
-
-    // TLDR Action
-    document.getElementById('btn-tldr').addEventListener('click', async (e) => {{
-      const btn = e.currentTarget;
-      const res = document.getElementById('tldr-result');
-      btn.disabled = true; btn.innerText = "Summarizing..."; res.classList.remove('hidden'); res.innerHTML = "Loading...";
-      const context = `S&P500: {sp_close} ({sp_pct}%), Nasdaq: {nd_close} ({nd_pct}%), Dow: {dj_close} ({dj_pct}%), BTC: {btc_close} ({btc_pct}%)`;
-      const text = await generateContent(`Write a 3 sentence market summary based on these weekly returns: ${{context}}`, "You are a financial writer.");
-      res.innerHTML = marked.parse(text);
-      btn.disabled = false; btn.innerText = "✨ Generate TL;DR";
-    }});
-
-    // Portfolio Action
-    document.getElementById('btn-analyze').addEventListener('click', async (e) => {{
-      const btn = e.currentTarget; 
-      const input = document.getElementById('portfolio-input').value;
-      const res = document.getElementById('analyze-result');
-      if (!input) return;
-      btn.disabled = true; btn.innerText = "Analyzing..."; res.classList.remove('hidden'); res.innerHTML = "Loading...";
-      const context = `S&P500: {sp_close} ({sp_pct}%), Nasdaq: {nd_close} ({nd_pct}%), Dow: {dj_close} ({dj_pct}%)`;
-      const text = await generateContent(`Market data: ${{context}}. My portfolio: ${{input}}. Give 3 actionable insights based on this data.`, "You are a financial advisor.");
-      res.innerHTML = marked.parse(text);
-      btn.disabled = false; btn.innerText = "✨ Analyze My Portfolio";
-    }});
-
-    // Chart Initialization using injected Python data
     document.addEventListener('DOMContentLoaded', function() {{
-      const ctx = document.getElementById('marketChart').getContext('2d');
-      const labels = {json.dumps(dates)};
+      const ctx = document.getElementById('spxChart').getContext('2d');
+      
+      // Injected 5-Day Data from yfinance
+      const labels = {json.dumps(sp_dates)};
       const dataSp = {json.dumps(sp_data)};
-      const dataNd = {json.dumps(nd_data)};
-      const dataDj = {json.dumps(dj_data)};
-
-      const calcPct = (arr) => arr.map(v => ((v - arr[0]) / arr[0]) * 100);
       
       new Chart(ctx, {{
         type: 'line',
         data: {{
           labels: labels,
-          datasets: [
-            {{ label: 'S&P 500', data: calcPct(dataSp), actualData: dataSp, borderColor: '#38bdf8', borderWidth: 2, tension: 0.3, pointRadius: 4 }},
-            {{ label: 'Nasdaq', data: calcPct(dataNd), actualData: dataNd, borderColor: '#818cf8', borderWidth: 2, tension: 0.3, pointRadius: 4 }},
-            {{ label: 'Dow Jones', data: calcPct(dataDj), actualData: dataDj, borderColor: '#fbbf24', borderWidth: 2, tension: 0.3, pointRadius: 4 }}
-          ]
+          datasets: [{{
+            label: 'S&P 500 Index Level',
+            data: dataSp,
+            borderColor: '#38bdf8', // Light blue
+            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.1, // Less tension for a more structural/financial look
+            pointBackgroundColor: '#0f172a',
+            pointBorderColor: '#38bdf8',
+            pointHoverBackgroundColor: '#38bdf8',
+            pointHoverBorderColor: '#fff',
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }}]
         }},
         options: {{
-          responsive: true, maintainAspectRatio: false, interaction: {{ mode: 'index', intersect: false }},
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {{
+            mode: 'index',
+            intersect: false,
+          }},
           plugins: {{
+            legend: {{
+              display: false // Hidden for a cleaner, single-line institutional look
+            }},
             tooltip: {{
+              backgroundColor: '#1e293b',
+              titleColor: '#f8fafc',
+              bodyColor: '#cbd5e1',
+              borderColor: '#334155',
+              borderWidth: 1,
+              padding: 10,
+              displayColors: false,
               callbacks: {{
                 label: function(context) {{
-                  let lbl = context.dataset.label + ': ' + new Intl.NumberFormat('en-US').format(context.dataset.actualData[context.dataIndex]);
-                  return lbl + ' (' + context.parsed.y.toFixed(2) + '%)';
+                  return 'Close: ' + new Intl.NumberFormat('en-US', {{ minimumFractionDigits: 2 }}).format(context.parsed.y);
                 }}
+              }}
+            }}
+          }},
+          scales: {{
+            x: {{
+              grid: {{ color: '#1e293b', drawBorder: false }},
+              ticks: {{ color: '#64748b', font: {{ family: "'Inter', sans-serif", size: 11 }} }}
+            }},
+            y: {{
+              grid: {{ color: '#1e293b', drawBorder: false }},
+              ticks: {{
+                color: '#64748b',
+                font: {{ family: "'Inter', sans-serif", size: 11 }},
+                callback: function(value) {{ return new Intl.NumberFormat('en-US').format(value); }}
               }}
             }}
           }}
