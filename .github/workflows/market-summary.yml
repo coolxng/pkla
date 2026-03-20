@@ -3,9 +3,9 @@ name: Generate Weekly Market Summary
 # This tells GitHub when to run the script automatically
 on:
   schedule:
-    # Runs at 22:00 UTC every Friday (4:00PM CST)
-    # The stock market closes at 4:00 PM EST, so this runs 15 minutes after the bell.
-    - cron: '0 22 * * 5'
+    # Runs at 21:30 UTC every Friday (3:30PM CST)
+    ## The stock market closes at 4:00 PM EST, so this runs 30 minutes after the bell.
+    - cron: '30 21 * * 5'
   
   # This allows you to click a "Run workflow" button manually anytime you want
   workflow_dispatch: 
