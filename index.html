@@ -7,50 +7,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #09090f;
-    --surface: #10121a;
-    --surface2: #181b26;
-    --border: #1c1f2e;
-    --accent: #e8c84a;
-    --accent2: #4a9eff;
-    --red: #f05b5b;
-    --green: #3dd68c;
-    --text: #dde1ee;
-    --muted: #5c6480;
-    --label: #8b94b2;
+    --bg: #09090f; --surface: #10121a; --surface2: #181b26; --border: #1c1f2e;
+    --accent: #e8c84a; --accent2: #4a9eff; --red: #f05b5b; --green: #3dd68c;
+    --text: #dde1ee; --muted: #5c6480; --label: #8b94b2;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: 300;
-    line-height: 1.65;
-  }
-  ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; line-height: 1.65; }
+  ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-  .top-nav-wrapper {
-    position: sticky; top: 0; z-index: 1000;
-    background: rgba(9, 9, 15, 0.85);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
-  }
+  .top-nav-wrapper { position: sticky; top: 0; z-index: 1000; background: rgba(9,9,15,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
   .masthead { padding: 32px 64px 24px; position: relative; overflow: hidden; }
   .masthead::before { content: ''; position: absolute; top: -80px; right: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(232,200,74,0.06) 0%, transparent 65%); pointer-events: none; }
   .masthead-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 24px; }
   .kicker { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-  .week-title { font-family: 'Playfair Display', serif; font-size: clamp(26px, 3.5vw, 42px); font-weight: 900; line-height: 1.05; letter-spacing: -0.025em; color: #fff; }
+  .week-title { font-family: 'Playfair Display', serif; font-size: clamp(26px,3.5vw,42px); font-weight: 900; line-height: 1.05; letter-spacing: -0.025em; color: #fff; }
   .week-title span { color: var(--accent); }
   .masthead-meta { text-align: right; }
   .badge { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; padding: 5px 12px; border-radius: 2px; margin-bottom: 8px; }
   .badge-red { background: rgba(240,91,91,0.1); border: 1px solid rgba(240,91,91,0.28); color: var(--red); }
   .badge-green { background: rgba(61,214,140,0.1); border: 1px solid rgba(61,214,140,0.28); color: var(--green); }
   .pub-date { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
-
-  .ticker-wrapper { border-top: 1px solid var(--border); overflow: hidden; white-space: nowrap; display: flex; align-items: center; background: rgba(16, 18, 26, 0.5); }
+  .ticker-wrapper { border-top: 1px solid var(--border); overflow: hidden; white-space: nowrap; display: flex; align-items: center; background: rgba(16,18,26,0.5); }
   .ticker-track { display: inline-flex; align-items: center; animation: scrollTicker 45s linear infinite; }
   .ticker-track:hover { animation-play-state: paused; }
   @keyframes scrollTicker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
@@ -60,13 +38,11 @@
   .t-val { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; color: #fff; }
   .t-chg { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
   .neg { color: var(--red); } .pos { color: var(--green); }
-
   .container { max-width: 1120px; margin: 0 auto; padding: 0 64px 90px; }
   .section { margin-top: 60px; padding-top: 56px; border-top: 1px solid var(--border); }
   .section:first-child { border-top: none; padding-top: 40px; margin-top: 20px; }
   .sec-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
   .sec-title { font-family: 'Playfair Display', serif; font-size: 23px; font-weight: 700; color: #fff; margin-bottom: 28px; }
-
   .idx-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-bottom: 28px; }
   .idx-card { background: var(--surface); padding: 26px; position: relative; overflow: hidden; }
   .idx-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--red); }
@@ -75,12 +51,10 @@
   .idx-close { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 3px; }
   .idx-wtd { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-bottom: 6px; }
   .idx-note { font-size: 11.5px; color: var(--label); line-height: 1.5; }
-
   .blist { list-style: none; display: flex; flex-direction: column; gap: 11px; }
   .blist li { padding-left: 20px; position: relative; font-size: 13.5px; color: #bcc3d6; line-height: 1.65; }
   .blist li::before { content: '—'; position: absolute; left: 0; color: var(--accent); font-family: 'IBM Plex Mono', monospace; }
   .blist li strong { color: var(--text); font-weight: 600; }
-
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
   .col-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
   .col-lbl.lead { color: var(--green); } .col-lbl.lag { color: var(--red); }
@@ -88,52 +62,43 @@
   .tag { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; padding: 4px 10px; border-radius: 2px; border: 1px solid; }
   .tag.g { background: rgba(61,214,140,.07); border-color: rgba(61,214,140,.22); color: var(--green); }
   .tag.r { background: rgba(240,91,91,.07); border-color: rgba(240,91,91,.22); color: var(--red); }
-
   .data-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 2px; margin-bottom: 26px; }
   .dcell { background: var(--surface); padding: 20px 22px; }
   .dc-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
   .dc-val { font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 500; color: #fff; margin-bottom: 2px; }
   .dc-val.hot { color: var(--red); } .dc-val.warm { color: var(--accent); } .dc-val.cool { color: var(--green); }
   .dc-note { font-size: 11px; color: var(--label); line-height: 1.45; }
-
   .co-row { display: flex; align-items: flex-start; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--border); }
   .co-row:last-child { border-bottom: none; }
   .tkr { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; background: var(--surface2); border: 1px solid var(--border); padding: 4px 9px; min-width: 66px; text-align: center; flex-shrink: 0; margin-top: 1px; border-radius: 2px; color: #fff; }
   .co-desc { font-size: 13.5px; color: #bcc3d6; line-height: 1.55; flex: 1; }
   .co-mv { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; flex-shrink: 0; margin-top: 2px; font-weight: 500; }
-
   .crypto-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; margin-bottom: 26px; }
   .cc { background: var(--surface); padding: 20px 22px; }
   .cc-name { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
   .cc-price { font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 700; color: #fff; margin-bottom: 3px; }
   .cc-chg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
-
   .gtable { width: 100%; border-collapse: collapse; }
   .gtable th { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); padding: 9px 16px; text-align: left; border-bottom: 1px solid var(--border); }
   .gtable td { padding: 13px 16px; font-size: 13px; color: #bcc3d6; border-bottom: 1px solid var(--border); vertical-align: top; }
   .gtable tr:last-child td { border-bottom: none; }
   .gtable td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #fff; white-space: nowrap; }
   .gtable td:nth-child(2) { font-family: 'IBM Plex Mono', monospace; font-size: 11px; width: 110px; }
-
   .takeaway { background: var(--surface); border-left: 3px solid var(--accent); padding: 30px 34px; font-size: 14.5px; color: #d0d5e8; line-height: 1.8; font-style: italic; }
-
   .ahead-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; }
   .ahead-cell { background: var(--surface); padding: 20px 22px; }
   .ahead-day { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent2); margin-bottom: 8px; }
   .ahead-ev { font-size: 13px; color: #bcc3d6; line-height: 1.65; }
-
   .chart-wrap { background: var(--surface); padding: 28px 28px 22px; }
   .chart-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
   .chart-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; }
   canvas { display: block; width: 100% !important; }
-
   .footer { border-top: 1px solid var(--border); padding: 26px 64px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
   .footer-txt { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--muted); letter-spacing: 0.04em; }
-
   @media(max-width:780px){
     .masthead,.container,.footer{padding-left:20px;padding-right:20px;}
     .idx-grid,.two-col,.crypto-grid,.ahead-grid{grid-template-columns:1fr;}
-    .masthead-row { align-items: flex-start; flex-direction: column; gap: 16px; }
+    .masthead-row{align-items:flex-start;flex-direction:column;gap:16px;}
   }
 </style>
 </head>
@@ -143,12 +108,12 @@
   <div class="masthead">
     <div class="masthead-row">
       <div>
-        <div class="kicker">Weekly Market Summary · U.S. Equities &amp; Digital Assets</div>
-        <div class="week-title">Mar 16 – <span>Mar 20</span>, 2026</div>
+        <div class="kicker">Weekly Market Summary &middot; U.S. Equities &amp; Digital Assets</div>
+        <div class="week-title">Mar 16 &ndash; <span>Mar 20</span>, 2026</div>
       </div>
       <div class="masthead-meta">
         <div class="badge badge-red">⬇ Risk-Off / Pullback</div>
-        <div class="pub-date">Published March 20, 2026 · Post Market Close</div>
+        <div class="pub-date">Published March 20, 2026 &middot; Post Market Close</div>
       </div>
     </div>
   </div>
@@ -190,13 +155,13 @@
     </div>
     <div class="t-item">
       <div class="t-name">Bitcoin</div>
-      <div class="t-val">$70,539</div>
-      <div class="t-chg neg">▼ -3.09% WTD</div>
+      <div class="t-val">$70,578</div>
+      <div class="t-chg neg">▼ -3.04% WTD</div>
     </div>
     <div class="t-item">
       <div class="t-name">Ethereum</div>
-      <div class="t-val">$2,147</div>
-      <div class="t-chg neg">▼ -1.39% WTD</div>
+      <div class="t-val">$2,148</div>
+      <div class="t-chg neg">▼ -1.36% WTD</div>
     </div>
     <div class="t-item">
       <div class="t-name">10-Yr Yield</div>
@@ -240,13 +205,13 @@
     </div>
     <div class="t-item">
       <div class="t-name">Bitcoin</div>
-      <div class="t-val">$70,539</div>
-      <div class="t-chg neg">▼ -3.09% WTD</div>
+      <div class="t-val">$70,578</div>
+      <div class="t-chg neg">▼ -3.04% WTD</div>
     </div>
     <div class="t-item">
       <div class="t-name">Ethereum</div>
-      <div class="t-val">$2,147</div>
-      <div class="t-chg neg">▼ -1.39% WTD</div>
+      <div class="t-val">$2,148</div>
+      <div class="t-chg neg">▼ -1.36% WTD</div>
     </div>
     <div class="t-item">
       <div class="t-name">10-Yr Yield</div>
@@ -263,24 +228,24 @@
       <div class="idx-card ">
         <div class="idx-name">S&amp;P 500</div>
         <div class="idx-close">6,506.48</div>
-        <div class="idx-wtd neg">▼ -1.9% WTD</div>
+        <div class="idx-wtd neg">&#9660; -1.9% WTD</div>
         <div class="idx-note">Reflects broad market performance across the 500 largest U.S. publicly traded companies.</div>
       </div>
       <div class="idx-card ">
         <div class="idx-name">Nasdaq Composite</div>
         <div class="idx-close">21,647.61</div>
-        <div class="idx-wtd neg">▼ -2.07% WTD</div>
+        <div class="idx-wtd neg">&#9660; -2.07% WTD</div>
         <div class="idx-note">Tech-heavy index heavily influenced by mega-cap growth and semiconductor equities.</div>
       </div>
       <div class="idx-card ">
         <div class="idx-name">Dow Jones Industrial Avg.</div>
         <div class="idx-close">45,577.47</div>
-        <div class="idx-wtd neg">▼ -981 pts WTD</div>
+        <div class="idx-wtd neg">&#9660; -981 pts WTD</div>
         <div class="idx-note">Price-weighted index representing 30 prominent blue-chip U.S. corporations.</div>
       </div>
     </div>
     <ul class="blist">
-      <li><strong>Market Tone:</strong> U.S. equities finished the week lower, with the S&P 500 recording a -1.9% move.</li>
+      <li><strong>Market Tone:</strong> U.S. equities finished the week lower, with the S&amp;P 500 recording a -1.9% move.</li>
       <li><strong>Volatility Profile:</strong> The VIX closed the week at 26.78. Levels below 20 generally indicate a calmer equity environment, while prints above 20 signal elevated hedging activity.</li>
     </ul>
   </div>
@@ -290,7 +255,7 @@
     <div class="sec-title">Sector Performance</div>
     <div class="two-col" style="margin-bottom:26px;">
       <div>
-        <div class="col-lbl lead">▲ Top Performing Sectors</div>
+        <div class="col-lbl lead">&#9650; Top Performing Sectors</div>
         <div class="tag-row"><span class="tag g">Energy (XLE) (+2.79%)</span><span class="tag g">Financials (XLF) (+0.39%)</span><span class="tag g">Technology (XLK) (-1.1%)</span><span class="tag g">Industrials (XLI) (-1.81%)</span></div>
         <ul class="blist">
           <li>Capital rotated strongly into <strong>Energy (XLE)</strong>, making it the top performing segment of the S&P 500 this week.</li>
@@ -298,7 +263,7 @@
         </ul>
       </div>
       <div>
-        <div class="col-lbl lag">▼ Lagging Sectors</div>
+        <div class="col-lbl lag">&#9660; Lagging Sectors</div>
         <div class="tag-row"><span class="tag r">Real Estate (XLRE) (-3.93%)</span><span class="tag r">Cons. Staples (XLP) (-4.07%)</span><span class="tag r">Materials (XLB) (-4.49%)</span><span class="tag r">Utilities (XLU) (-4.92%)</span></div>
         <ul class="blist">
           <li><strong>Real Estate (XLRE)</strong> lagged the broader market, absorbing the heaviest selling pressure over the 5-day period.</li>
@@ -336,27 +301,27 @@
     <div style="margin-bottom:20px;">
         <div class="co-row">
           <span class="tkr">AAPL</span>
-          <div class="co-desc"><strong>Apple</strong> closed the week at $247.99. As a core mega-cap weight, its -0.85% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
+          <div class="co-desc"><strong>Apple</strong> closed the week at $247.99, posting a -0.85% move that contributed to index-level flows.</div>
           <span class="co-mv neg">▼ -0.85%</span>
         </div>
         <div class="co-row">
           <span class="tkr">MSFT</span>
-          <div class="co-desc"><strong>Microsoft</strong> closed the week at $381.87. As a core mega-cap weight, its -3.46% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
+          <div class="co-desc"><strong>Microsoft</strong> closed the week at $381.87, posting a -3.46% move that contributed to index-level flows.</div>
           <span class="co-mv neg">▼ -3.46%</span>
         </div>
         <div class="co-row">
           <span class="tkr">NVDA</span>
-          <div class="co-desc"><strong>Nvidia</strong> closed the week at $172.70. As a core mega-cap weight, its -4.19% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
+          <div class="co-desc"><strong>Nvidia</strong> closed the week at $172.70, posting a -4.19% move that contributed to index-level flows.</div>
           <span class="co-mv neg">▼ -4.19%</span>
         </div>
         <div class="co-row">
           <span class="tkr">AMZN</span>
-          <div class="co-desc"><strong>Amazon</strong> closed the week at $205.37. As a core mega-cap weight, its -1.11% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
+          <div class="co-desc"><strong>Amazon</strong> closed the week at $205.37, posting a -1.11% move that contributed to index-level flows.</div>
           <span class="co-mv neg">▼ -1.11%</span>
         </div>
         <div class="co-row">
           <span class="tkr">META</span>
-          <div class="co-desc"><strong>Meta Platforms</strong> closed the week at $593.66. As a core mega-cap weight, its -3.18% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
+          <div class="co-desc"><strong>Meta Platforms</strong> closed the week at $593.66, posting a -3.18% move that contributed to index-level flows.</div>
           <span class="co-mv neg">▼ -3.18%</span>
         </div></div>
   </div>
@@ -367,23 +332,23 @@
     <div class="crypto-grid">
       <div class="cc">
         <div class="cc-name">Bitcoin (BTC)</div>
-        <div class="cc-price">$70,539</div>
-        <div class="cc-chg neg">▼ 3.09% WTD</div>
+        <div class="cc-price">$70,578</div>
+        <div class="cc-chg neg">&#9660; 3.04% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Ethereum (ETH)</div>
-        <div class="cc-price">$2,147</div>
-        <div class="cc-chg neg">▼ 1.39% WTD</div>
+        <div class="cc-price">$2,148</div>
+        <div class="cc-chg neg">&#9660; 1.36% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Solana (SOL)</div>
-        <div class="cc-price">$89.87</div>
-        <div class="cc-chg neg">▼ 2.58% WTD</div>
+        <div class="cc-price">$89.94</div>
+        <div class="cc-chg neg">&#9660; 2.51% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">XRP</div>
-        <div class="cc-price">$1.4400</div>
-        <div class="cc-chg neg">▼ 0.52% WTD</div>
+        <div class="cc-price">$1.4500</div>
+        <div class="cc-chg pos">&#9650; 0.17% WTD</div>
       </div>
     </div>
   </div>
@@ -411,7 +376,7 @@
   <div class="section">
     <div class="sec-label">Section 07</div>
     <div class="sec-title">Investor Takeaway</div>
-    <div class="takeaway">This week's price action was characterized by a sharp defensive rotation and a spike in hedging activity, with the VIX pushing to 26.78. Investors aggressively de-risked portfolios, shedding exposure in Real Estate (XLRE) and moving capital toward the relative safety of Energy (XLE). The dominant theme was capital preservation as the market rapidly recalibrated to shifting macroeconomic headwinds.</div>
+    <div class="takeaway">U.S. equities finished the week lower with the S&P 500 at 6,506.48, as elevated hedging activity characterized the tape. Sector rotation favored Energy (XLE) while Real Estate (XLRE) faced the heaviest selling pressure.</div>
   </div>
 
   <div class="section">
@@ -432,17 +397,17 @@
       </div>
       <div class="ahead-cell">
         <div class="ahead-day">Key Risk Factors</div>
-        <div class="ahead-ev">With the VIX at 26.78, the market is pricing elevated tail risk. Geopolitical developments, surprise macro data, and any Fed communication shift remain the primary exogenous risk factors heading into the new week.</div>
+        <div class="ahead-ev">The VIX at 26.78 signals elevated tail risk. Geopolitical developments, surprise macro data, and Fed communication shifts remain the primary exogenous risk factors heading into the new week.</div>
       </div>
     </div>
   </div>
 
   <div class="section">
     <div class="sec-label">Section 09</div>
-    <div class="sec-title">S&amp;P 500 — Daily Close (Mar 16–Mar 20, 2026)</div>
+    <div class="sec-title">S&amp;P 500 &mdash; Daily Close (Mar 16&ndash;Mar 20, 2026)</div>
     <div class="chart-wrap">
       <div class="chart-hdr">
-        <div class="chart-lbl">S&amp;P 500 (SPX) · Actual Daily Closing Prices</div>
+        <div class="chart-lbl">S&amp;P 500 (SPX) &middot; Actual Daily Closing Prices</div>
         <div class="chart-lbl">Live Data Generated via Python Automation</div>
       </div>
       <canvas id="spxChart" height="200"></canvas>
@@ -451,8 +416,8 @@
 </div>
 
 <div class="footer">
-  <div class="footer-txt">Automated Market Summary · Post Market Close Edition</div>
-  <div class="footer-txt">Live Data Sourced via YFinance API · March 20, 2026</div>
+  <div class="footer-txt">Automated Market Summary &middot; Post Market Close Edition</div>
+  <div class="footer-txt">Live Data via YFinance &amp; FMP &middot; AI Analysis via Claude &middot; March 20, 2026</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
