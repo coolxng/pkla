@@ -248,9 +248,10 @@ def _fallback_cell(cell: str, market_context: dict) -> str:
             f"for signs of stabilisation."
         ),
         "risk": (
-            f"With the VIX at {vix:.2f}, the market is {'pricing elevated tail risk' if vix >= 20 else 'relatively complacent'}. "
-            f"Geopolitical developments, surprise macro data, and any Fed communication "
-            f"shift remain the primary exogenous risk factors heading into the new week."
+            f"With the VIX at {vix:.2f}, the market is "
+            + ("pricing elevated tail risk" if vix >= 20 else "relatively complacent")
+            + ". Geopolitical developments, surprise macro data, and any Fed communication "
+            "shift remain the primary exogenous risk factors heading into the new week."
         ),
     }
     return fallbacks.get(cell, "")
@@ -336,10 +337,11 @@ def generate_lookahead_fmp(market_context: dict) -> dict:
         else f"suppressed VIX ({vix:.2f}) — market structurally underhedged"
     )
     if risk_events:
+        momentum_phrase = "the existing bearish momentum" if sp_pct < 0 else "any reversal of this week's gains"
         risk = (
             f"Risk events to monitor: {risk_events}. "
             f"Against a backdrop of {vix_context}, these scheduled catalysts have "
-            f"the potential to amplify {'the existing bearish momentum' if sp_pct < 0 else 'any reversal of this week\'s gains'} "
+            f"the potential to amplify {momentum_phrase} "
             f"if they surprise in a hawkish or risk-off direction."
         )
     else:
