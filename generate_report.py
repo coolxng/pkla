@@ -1,78 +1,444 @@
 import yfinance as yf
 import datetime
 import json
+import os
+import urllib.request
+import urllib.parse
+
+# ─────────────────────────────────────────────
+# CONFIGURATION
+# ─────────────────────────────────────────────
+
+# Load FMP key from environment variable (set as a GitHub Actions secret)
+# In your repo: Settings → Secrets → Actions → New repository secret
+# Name: FMP_API_KEY   Value: your key
+FMP_API_KEY = os.environ.get("FMP_API_KEY", "")
+
+# Sanity-check bounds for commodity prices (to catch stale/bad yfinance data)
+SANITY_BOUNDS = {
+    "GC=F":   (1000, 5000),   # Gold futures $/oz
+    "CL=F":   (20,   200),    # Crude Oil $/bbl
+    "BTC-USD":(1000, 500000),
+    "ETH-USD":(50,   50000),
+    "SOL-USD":(1,    10000),
+    "XRP-USD":(0.01, 100),
+    "^GSPC":  (1000, 20000),
+    "^IXIC":  (1000, 50000),
+    "^DJI":   (5000, 200000),
+    "^RUT":   (500,  10000),
+    "^VIX":   (5,    150),
+    "^TNX":   (0.1,  20),
+    "^IRX":   (0.0,  20),
+    "DX-Y.NYB":(50, 200),
+}
+
+# ETF fallbacks for problematic continuous futures
+FALLBACKS = {
+    "GC=F": "GLD",
+    "CL=F": "USO",
+}
+
+
+# ─────────────────────────────────────────────
+# DATA FETCHING
+# ─────────────────────────────────────────────
+
+def is_sane(ticker_symbol, value):
+    """Returns True if value is within expected bounds for a ticker."""
+    if ticker_symbol not in SANITY_BOUNDS:
+        return True
+    lo, hi = SANITY_BOUNDS[ticker_symbol]
+    return lo <= value <= hi
+
 
 def fetch_weekly_data(ticker_symbol):
-    """Fetches 6 days of data to get the previous Friday close, then returns the 5-day chart and WTD math."""
+    """
+    Fetches 6 days of data to get the previous Friday close, then returns
+    the 5-day chart and WTD math. Falls back to ETF proxy if primary fails
+    sanity check. Returns a dict with keys: dates, closes, end_price,
+    pct_change, abs_change, ticker_used, error.
+    """
+    tickers_to_try = [ticker_symbol]
+    if ticker_symbol in FALLBACKS:
+        tickers_to_try.append(FALLBACKS[ticker_symbol])
+
+    for tk in tickers_to_try:
+        try:
+            ticker = yf.Ticker(tk)
+            hist = ticker.history(period="6d")
+
+            if len(hist) < 2:
+                continue
+
+            prev_close = hist['Close'].iloc[0]
+            chart_hist = hist.iloc[-5:]
+            dates = [d.strftime('%a %m/%d') for d in chart_hist.index]
+            closes = [round(float(val), 2) for val in chart_hist['Close'].tolist()]
+            end_price = closes[-1]
+
+            # Sanity check end price
+            if not is_sane(tk, end_price):
+                print(f"  ⚠ Sanity check FAILED for {tk}: end_price={end_price} — trying fallback")
+                continue
+
+            pct_change = ((end_price - prev_close) / prev_close) * 100 if prev_close != 0 else 0.0
+            abs_change = end_price - prev_close
+
+            return {
+                "dates": dates,
+                "closes": closes,
+                "end_price": end_price,
+                "pct_change": round(pct_change, 2),
+                "abs_change": round(abs_change, 2),
+                "ticker_used": tk,
+                "error": None,
+            }
+
+        except Exception as e:
+            print(f"  ⚠ Exception fetching {tk}: {e}")
+            continue
+
+    # All attempts failed — return zeroed-out sentinel
+    print(f"  ✗ All fetch attempts failed for {ticker_symbol}. Using zeroed data.")
+    return {
+        "dates": [],
+        "closes": [],
+        "end_price": 0.0,
+        "pct_change": 0.0,
+        "abs_change": 0.0,
+        "ticker_used": ticker_symbol,
+        "error": f"Data unavailable for {ticker_symbol}",
+    }
+
+
+def d(result, key="end_price"):
+    return result[key]
+
+
+# ─────────────────────────────────────────────
+# FMP ECONOMIC CALENDAR — SECTION 08 GENERATOR
+# Fetches real scheduled events for next week,
+# categorises them, and builds 4 HTML-ready cells.
+# Falls back to rule-based copy if API call fails.
+# ─────────────────────────────────────────────
+
+# Keywords used to route each event into a cell
+_FED_KEYWORDS = [
+    "fed", "fomc", "federal reserve", "powell", "waller", "williams",
+    "jefferson", "cook", "kashkari", "bostic", "daly", "barkin",
+    "kugler", "musalem", "collins", "goolsbee", "balance sheet",
+    "interest rate decision", "monetary policy",
+]
+_EARNINGS_KEYWORDS = [
+    "earnings", "eps", "revenue", "guidance", "results", "quarterly",
+]
+_RISK_KEYWORDS = [
+    "geopolit", "opec", "tariff", "trade", "debt ceiling", "auction",
+    "treasury auction", "bond auction", "default", "sanction",
+    "election", "referendum", "central bank", "ecb", "boj", "boe",
+    "pboc", "imf", "world bank",
+]
+# Everything else (CPI, PPI, NFP, GDP, retail sales, etc.) → macro cell
+
+# Impact labels FMP returns: "High", "Medium", "Low"
+_MIN_IMPACT = {"High", "Medium"}
+
+
+def _fetch_fmp_calendar(from_date: str, to_date: str) -> list:
+    """
+    Calls FMP /economic_calendar endpoint and returns a list of event dicts.
+    Each dict has keys: date, event, country, impact, actual, estimate, previous.
+    Returns [] on any failure.
+    """
+    if not FMP_API_KEY:
+        print("  ⚠ FMP_API_KEY not set — skipping calendar fetch.")
+        return []
+
+    params = urllib.parse.urlencode({
+        "from": from_date,
+        "to": to_date,
+        "apikey": FMP_API_KEY,
+    })
+    url = f"https://financialmodelingprep.com/api/v3/economic_calendar?{params}"
+
     try:
-        ticker = yf.Ticker(ticker_symbol)
-        hist = ticker.history(period="6d")
-        
-        if len(hist) < 2:
-            return [], [], 0.0, 0.0, 0.0
-            
-        # The first row is the previous week's close
-        prev_close = hist['Close'].iloc[0]
-        
-        # The chart should only show the current week's 5 days
-        chart_hist = hist.iloc[-5:]
-        dates = [d.strftime('%a %m/%d') for d in chart_hist.index]
-        closes = [round(val, 2) for val in chart_hist['Close'].tolist()]
-        
-        end_price = closes[-1]
-        
-        # Calculate true Week-to-Date percentage change
-        pct_change = ((end_price - prev_close) / prev_close) * 100 if prev_close != 0 else 0.0
-        abs_change = end_price - prev_close
-        
-        return dates, closes, end_price, round(pct_change, 2), round(abs_change, 2)
-    except Exception:
-        return [], [], 0.0, 0.0, 0.0
+        req = urllib.request.Request(url, headers={"User-Agent": "market-summary-bot/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if isinstance(data, list):
+            # Keep only US events at Medium/High impact
+            filtered = [
+                e for e in data
+                if e.get("country", "").upper() in ("US", "USD", "")
+                and e.get("impact", "Low") in _MIN_IMPACT
+            ]
+            print(f"  ✓ FMP returned {len(data)} events, {len(filtered)} US medium/high impact.")
+            return filtered
+        print(f"  ⚠ Unexpected FMP response type: {type(data)}")
+        return []
+    except Exception as e:
+        print(f"  ⚠ FMP calendar fetch failed: {e}")
+        return []
+
+
+def _categorise_events(events: list) -> dict[str, list]:
+    """
+    Routes each event into one of four buckets based on keyword matching.
+    Returns {"macro": [...], "fed": [...], "earnings": [...], "risk": [...]}.
+    """
+    buckets = {"macro": [], "fed": [], "earnings": [], "risk": []}
+    for e in events:
+        name_lower = e.get("event", "").lower()
+        if any(k in name_lower for k in _FED_KEYWORDS):
+            buckets["fed"].append(e)
+        elif any(k in name_lower for k in _EARNINGS_KEYWORDS):
+            buckets["earnings"].append(e)
+        elif any(k in name_lower for k in _RISK_KEYWORDS):
+            buckets["risk"].append(e)
+        else:
+            buckets["macro"].append(e)
+    return buckets
+
+
+def _fmt_event_list(events: list, max_items: int = 5) -> str:
+    """Formats a list of events into a compact readable string for the cell."""
+    lines = []
+    seen = set()
+    for e in events[:max_items * 2]:  # over-fetch then dedupe
+        name = e.get("event", "").strip()
+        date_str = e.get("date", "")[:10]  # "YYYY-MM-DD"
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        try:
+            dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+            label = dt.strftime("%a %b ") + str(dt.day)
+        except ValueError:
+            label = date_str
+        impact = e.get("impact", "")
+        impact_tag = " ★" if impact == "High" else ""
+        lines.append(f"{label}: {name}{impact_tag}")
+        if len(lines) >= max_items:
+            break
+    return " · ".join(lines) if lines else ""
+
+
+def _fallback_cell(cell: str, market_context: dict) -> str:
+    """Returns a generic fallback string for a given cell if FMP has no data."""
+    tnx = market_context["tnx_close"]
+    vix = market_context["vix_close"]
+    bot1 = market_context["bottom_sectors"].split(", ")[0]
+    top1 = market_context["top_sectors"].split(", ")[0]
+    fallbacks = {
+        "macro": (
+            f"Investors will monitor upcoming inflation and labor market prints for "
+            f"direction on the consumer backdrop. Given the 10-year at {tnx:.2f}%, "
+            f"any upside surprise in price data could reignite rate pressure on "
+            f"rate-sensitive names like those in {bot1}."
+        ),
+        "fed": (
+            f"The Fed remains data-dependent with yields at {tnx:.2f}%. Scheduled "
+            f"FOMC member speeches will be parsed for consensus on the rate path — "
+            f"any hawkish lean could trigger another leg of pressure on growth equities."
+        ),
+        "earnings": (
+            f"Earnings season continues with sector rotation firmly in focus. "
+            f"Reports from {top1} constituents will be watched for guidance "
+            f"confirmation, while results from lagging sectors will be scrutinised "
+            f"for signs of stabilisation."
+        ),
+        "risk": (
+            f"With the VIX at {vix:.2f}, the market is {'pricing elevated tail risk' if vix >= 20 else 'relatively complacent'}. "
+            f"Geopolitical developments, surprise macro data, and any Fed communication "
+            f"shift remain the primary exogenous risk factors heading into the new week."
+        ),
+    }
+    return fallbacks.get(cell, "")
+
+
+def generate_lookahead_fmp(market_context: dict) -> dict:
+    """
+    Fetches next week's FMP economic calendar and builds four Section 08 cells.
+    Falls back to rule-based text per-cell if a bucket has no events.
+    """
+    # Calculate next Mon–Fri date range
+    today = datetime.date.today()
+    days_until_monday = (7 - today.weekday()) % 7 or 7
+    next_monday = today + datetime.timedelta(days=days_until_monday)
+    next_friday = next_monday + datetime.timedelta(days=4)
+    from_str = next_monday.strftime("%Y-%m-%d")
+    to_str   = next_friday.strftime("%Y-%m-%d")
+    print(f"  Fetching FMP calendar: {from_str} → {to_str}")
+
+    events   = _fetch_fmp_calendar(from_str, to_str)
+    buckets  = _categorise_events(events)
+
+    tnx      = market_context["tnx_close"]
+    tnx_pct  = market_context["tnx_pct"]
+    vix      = market_context["vix_close"]
+    top1     = market_context["top_sectors"].split(", ")[0]
+    bot1     = market_context["bottom_sectors"].split(", ")[0]
+    sp_pct   = market_context["sp_pct"]
+
+    # ── MACRO CELL ───────────────────────────────
+    macro_events = _fmt_event_list(buckets["macro"])
+    if macro_events:
+        yield_context = (
+            f"rising yield environment ({tnx:.2f}%, +{abs(tnx_pct):.0f}bps WTD)" if tnx_pct > 0.03
+            else f"easing yield backdrop ({tnx:.2f}%, {tnx_pct:.0f}bps WTD)" if tnx_pct < -0.03
+            else f"stable rate backdrop ({tnx:.2f}%)"
+        )
+        macro = (
+            f"Key data on the calendar: {macro_events}. "
+            f"These releases land in a {yield_context}, meaning any upside surprise "
+            f"on inflation or labour data carries outsized repricing risk for rate-sensitive "
+            f"sectors like {bot1} that already underperformed this week."
+        )
+    else:
+        macro = _fallback_cell("macro", market_context)
+
+    # ── FED CELL ─────────────────────────────────
+    fed_events = _fmt_event_list(buckets["fed"])
+    if fed_events:
+        if tnx > 4.25:
+            fed_tone = "restrictive territory — markets will parse every word for pivot signals"
+        elif tnx > 3.75:
+            fed_tone = "a data-dependent range — tone consistency across speakers will be key"
+        else:
+            fed_tone = "accommodative levels — any hawkish surprise could rapidly reprice risk"
+        fed = (
+            f"Fed calendar: {fed_events}. "
+            f"With the 10-year at {tnx:.2f}% — {fed_tone} — "
+            f"any divergence between hawkish regional presidents and a more measured Chair "
+            f"can move rate futures meaningfully and spill into equity sector rotation."
+        )
+    else:
+        fed = _fallback_cell("fed", market_context)
+
+    # ── EARNINGS & CATALYSTS CELL ─────────────────
+    earn_events = _fmt_event_list(buckets["earnings"])
+    if earn_events:
+        earn = (
+            f"Earnings on deck: {earn_events}. "
+            f"Given this week's rotation into {top1} and out of {bot1}, "
+            f"guidance and forward commentary will matter more than the backward-looking "
+            f"beats — investors will be looking for demand confirmation in the leading sectors "
+            f"and any green shoots of stabilisation in the laggards."
+        )
+    else:
+        earn = _fallback_cell("earnings", market_context)
+
+    # ── RISK FACTORS CELL ────────────────────────
+    risk_events = _fmt_event_list(buckets["risk"])
+    vix_context = (
+        f"elevated VIX ({vix:.2f}) already flagging hedging demand" if vix >= 22
+        else f"moderate VIX ({vix:.2f}) — complacency worth watching" if vix >= 16
+        else f"suppressed VIX ({vix:.2f}) — market structurally underhedged"
+    )
+    if risk_events:
+        risk = (
+            f"Risk events to monitor: {risk_events}. "
+            f"Against a backdrop of {vix_context}, these scheduled catalysts have "
+            f"the potential to amplify {'the existing bearish momentum' if sp_pct < 0 else 'any reversal of this week\'s gains'} "
+            f"if they surprise in a hawkish or risk-off direction."
+        )
+    else:
+        risk = _fallback_cell("risk", market_context)
+
+    print("  ✓ Section 08 built from FMP economic calendar.")
+    return {
+        "macro":                  macro,
+        "fed_policy":             fed,
+        "earnings_and_catalysts": earn,
+        "risk_factors":           risk,
+    }
+
+
+# ─────────────────────────────────────────────
+# FORMATTING HELPERS
+# ─────────────────────────────────────────────
+
+def fmt_date(dt, include_day=True):
+    """Cross-platform date formatting without %-d (Linux-only)."""
+    if include_day:
+        return f"{dt.strftime('%b')} {dt.day}"
+    return f"{dt.strftime('%B')} {dt.day}, {dt.strftime('%Y')}"
+
+
+def fmt_chg(pct, abs_val=None, is_yield=False, is_points=False):
+    sign = "+" if pct >= 0 else ""
+    color = "pos" if pct >= 0 else "neg"
+    arrow = "▲" if pct >= 0 else "▼"
+
+    if is_yield and abs_val is not None:
+        # abs_val is in percentage-point terms (e.g. 0.11 = 11 bps)
+        bps = round(abs(abs_val) * 100)
+        return f'<div class="t-chg {color}">{arrow} {sign}{bps} bps WTD</div>'
+    elif is_points and abs_val is not None:
+        return f'<div class="t-chg {color}">{arrow} {sign}{int(abs_val)} pts WTD</div>'
+    else:
+        return f'<div class="t-chg {color}">{arrow} {sign}{pct}% WTD</div>'
+
+
+def get_t_item(name, val, pct, is_yield=False, abs_val=None, is_points=False):
+    return f'''
+    <div class="t-item">
+      <div class="t-name">{name}</div>
+      <div class="t-val">{val}</div>
+      {fmt_chg(pct, abs_val=abs_val, is_yield=is_yield, is_points=is_points)}
+    </div>'''
+
+
+# ─────────────────────────────────────────────
+# MAIN REPORT GENERATOR
+# ─────────────────────────────────────────────
 
 def generate_html():
     print("Fetching market data...")
-    
-    # 1. Fetch Major Indices & Extract EXACT Dates from the market data
-    sp_ticker = yf.Ticker('^GSPC')
-    sp_hist = sp_ticker.history(period="5d")
-    
-    if len(sp_hist) >= 2:
-        start_date = sp_hist.index[0]
-        end_date = sp_hist.index[-1]
-        week_start_str = start_date.strftime('%b %-d')
-        today_str = end_date.strftime('%b %-d')
-        year_str = end_date.strftime('%Y')
-        full_date = end_date.strftime('%B %-d, %Y')
+
+    # ── Major Indices ──────────────────────────────────────────
+    sp  = fetch_weekly_data('^GSPC')
+    nd  = fetch_weekly_data('^IXIC')
+    dj  = fetch_weekly_data('^DJI')
+    rut = fetch_weekly_data('^RUT')
+    vix = fetch_weekly_data('^VIX')
+    tnx = fetch_weekly_data('^TNX')
+    irx = fetch_weekly_data('^IRX')
+    dxy = fetch_weekly_data('DX-Y.NYB')
+
+    # ── Commodities & Crypto ───────────────────────────────────
+    gold = fetch_weekly_data('GC=F')
+    oil  = fetch_weekly_data('CL=F')
+    btc  = fetch_weekly_data('BTC-USD')
+    eth  = fetch_weekly_data('ETH-USD')
+    sol  = fetch_weekly_data('SOL-USD')
+    xrp  = fetch_weekly_data('XRP-USD')
+
+    # ── Global ─────────────────────────────────────────────────
+    n225  = fetch_weekly_data('^N225')
+    stoxx = fetch_weekly_data('^STOXX50E')
+
+    # ── Date Range (from live S&P data) ───────────────────────
+    if sp["dates"]:
+        # Parse dates back from the formatted strings for display
+        sp_ticker = yf.Ticker('^GSPC')
+        sp_hist = sp_ticker.history(period="5d")
+        start_dt = sp_hist.index[0].to_pydatetime()
+        end_dt   = sp_hist.index[-1].to_pydatetime()
+        week_start_str = fmt_date(start_dt)
+        today_str      = fmt_date(end_dt)
+        year_str       = end_dt.strftime('%Y')
+        full_date      = f"{end_dt.strftime('%B')} {end_dt.day}, {year_str}"
+        week_end_date  = full_date
     else:
         now = datetime.datetime.now()
-        week_start_str = (now - datetime.timedelta(days=4)).strftime('%b %-d')
-        today_str = now.strftime('%b %-d')
-        year_str = now.strftime('%Y')
-        full_date = now.strftime('%B %-d, %Y')
+        week_start_str = fmt_date(now - datetime.timedelta(days=4))
+        today_str      = fmt_date(now)
+        year_str       = now.strftime('%Y')
+        full_date      = f"{now.strftime('%B')} {now.day}, {year_str}"
+        week_end_date  = full_date
 
-    # Fetch Data
-    sp_dates, sp_data, sp_close, sp_pct, _ = fetch_weekly_data('^GSPC')    
-    _, nd_data, nd_close, nd_pct, _ = fetch_weekly_data('^IXIC')           
-    _, dj_data, dj_close, dj_pct, dj_abs = fetch_weekly_data('^DJI')            
-    _, rut_data, rut_close, rut_pct, _ = fetch_weekly_data('^RUT')            
-    _, vix_data, vix_close, vix_pct, _ = fetch_weekly_data('^VIX')         
-    _, tnx_data, tnx_close, tnx_pct, tnx_abs = fetch_weekly_data('^TNX') 
-    _, irx_data, irx_close, irx_pct, irx_abs = fetch_weekly_data('^IRX')        
-    _, dxy_data, dxy_close, dxy_pct, _ = fetch_weekly_data('DX-Y.NYB')
-
-    # Commodities & Crypto
-    _, _, gold_close, gold_pct, _ = fetch_weekly_data('GC=F')
-    _, _, oil_close, oil_pct, _ = fetch_weekly_data('CL=F')
-    _, _, btc_close, btc_pct, _ = fetch_weekly_data('BTC-USD')      
-    _, _, eth_close, eth_pct, _ = fetch_weekly_data('ETH-USD')      
-    _, _, sol_close, sol_pct, _ = fetch_weekly_data('SOL-USD')
-    _, _, xrp_close, xrp_pct, _ = fetch_weekly_data('XRP-USD')
-
-    # Global
-    _, _, n225_close, n225_pct, _ = fetch_weekly_data('^N225')
-    _, _, stoxx_close, stoxx_pct, _ = fetch_weekly_data('^STOXX50E')
-
-    # Fetch & Sort Sectors
+    # ── Sectors ────────────────────────────────────────────────
     sectors = {
         'Technology (XLK)': 'XLK', 'Financials (XLF)': 'XLF',
         'Energy (XLE)': 'XLE', 'Healthcare (XLV)': 'XLV',
@@ -83,63 +449,80 @@ def generate_html():
     }
     sector_perf = {}
     for name, ticker in sectors.items():
-        _, _, _, pct, _ = fetch_weekly_data(ticker)
-        sector_perf[name] = pct
-    
+        r = fetch_weekly_data(ticker)
+        sector_perf[name] = r["pct_change"]
+
     sorted_sectors = sorted(sector_perf.items(), key=lambda x: x[1], reverse=True)
-    top_sectors = sorted_sectors[:4]
+    top_sectors    = sorted_sectors[:4]
     bottom_sectors = sorted_sectors[-4:]
 
-    # Formatting Helpers
-    def fmt_chg(pct, abs_val=None, is_yield=False, is_points=False):
-        sign = "+" if pct >= 0 else ""
-        color = "pos" if pct >= 0 else "neg"
-        arrow = "▲" if pct >= 0 else "▼"
-        
-        if is_yield and abs_val is not None:
-            bps = int(abs_val * 100) if abs_val < 10 else int(abs_val * 10)
-            return f'<div class="t-chg {color}">{arrow} {sign}{bps} bps WTD</div>'
-        elif is_points and abs_val is not None:
-            return f'<div class="t-chg {color}">{arrow} {sign}{int(abs_val)} pts WTD</div>'
-        else:
-            return f'<div class="t-chg {color}">{arrow} {sign}{pct}% WTD</div>'
-
-    # Build Ticker Track Items (Added Gold, Crude Oil, Russell 2000 for a richer scroll)
-    def get_t_item(name, val, pct, is_yield=False, abs_val=None, is_points=False):
-        return f'''
-        <div class="t-item">
-          <div class="t-name">{name}</div>
-          <div class="t-val">{val}</div>
-          {fmt_chg(pct, abs_val=abs_val, is_yield=is_yield, is_points=is_points)}
+    # ── Mega Caps ──────────────────────────────────────────────
+    mega_caps = {
+        'AAPL': 'Apple', 'MSFT': 'Microsoft', 'NVDA': 'Nvidia',
+        'AMZN': 'Amazon', 'META': 'Meta Platforms'
+    }
+    mega_cap_html = ""
+    for tk, name in mega_caps.items():
+        r = fetch_weekly_data(tk)
+        c_close, c_pct = r["end_price"], r["pct_change"]
+        c_color = "pos" if c_pct >= 0 else "neg"
+        c_arrow = "▲" if c_pct >= 0 else "▼"
+        c_sign  = "+" if c_pct >= 0 else ""
+        err_note = f' <span style="color:var(--red);font-size:10px;">(data error)</span>' if r["error"] else ""
+        mega_cap_html += f'''
+        <div class="co-row">
+          <span class="tkr">{tk}</span>
+          <div class="co-desc"><strong>{name}</strong>{err_note} closed the week at ${c_close:,.2f}. As a core mega-cap weight, its {c_sign}{c_pct}% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
+          <span class="co-mv {c_color}">{c_arrow} {c_sign}{c_pct}%</span>
         </div>'''
 
-    t_items = ""
-    t_items += get_t_item("S&P 500", f"{sp_close:,.2f}", sp_pct)
-    t_items += get_t_item("Nasdaq", f"{nd_close:,.2f}", nd_pct)
-    t_items += get_t_item("DJIA", f"{dj_close:,.2f}", dj_pct, abs_val=dj_abs, is_points=True)
-    t_items += get_t_item("Russell 2000", f"{rut_close:,.2f}", rut_pct)
-    t_items += get_t_item("Crude Oil", f"${oil_close:,.2f}", oil_pct)
-    t_items += get_t_item("Gold", f"${gold_close:,.2f}", gold_pct)
-    t_items += get_t_item("VIX", f"{vix_close:,.2f}", vix_pct)
-    t_items += get_t_item("Bitcoin", f"${btc_close:,.0f}", btc_pct)
-    t_items += get_t_item("Ethereum", f"${eth_close:,.0f}", eth_pct)
-    t_items += get_t_item("10-Yr Yield", f"{tnx_close:,.2f}%", tnx_pct, abs_val=tnx_abs, is_yield=True)
+    # ── Section 08 — FMP economic calendar ────────────────────
+    print("Generating Section 08 from FMP economic calendar...")
+    lookahead = generate_lookahead_fmp({
+        "sp_pct":       sp["pct_change"],
+        "nd_pct":       nd["pct_change"],
+        "vix_close":    vix["end_price"],
+        "tnx_close":    tnx["end_price"],
+        "tnx_pct":      tnx["pct_change"],
+        "dxy_close":    dxy["end_price"],
+        "dxy_pct":      dxy["pct_change"],
+        "top_sectors":  ", ".join([s[0] for s in top_sectors[:2]]),
+        "bottom_sectors": ", ".join([s[0] for s in bottom_sectors[:2]]),
+        "btc_pct":      btc["pct_change"],
+        "oil_pct":      oil["pct_change"],
+        "gold_pct":     gold["pct_change"],
+        "week_end_date": week_end_date,
+    })
 
-    # Duplicate items twice to ensure a seamless infinite CSS scroll
+    # ── Ticker Bar ─────────────────────────────────────────────
+    t_items = ""
+    t_items += get_t_item("S&P 500",     f"{sp['end_price']:,.2f}",       sp["pct_change"])
+    t_items += get_t_item("Nasdaq",      f"{nd['end_price']:,.2f}",       nd["pct_change"])
+    t_items += get_t_item("DJIA",        f"{dj['end_price']:,.2f}",       dj["pct_change"], abs_val=dj["abs_change"], is_points=True)
+    t_items += get_t_item("Russell 2000",f"{rut['end_price']:,.2f}",      rut["pct_change"])
+    t_items += get_t_item("Crude Oil",   f"${oil['end_price']:,.2f}",     oil["pct_change"])
+    t_items += get_t_item("Gold",        f"${gold['end_price']:,.2f}",    gold["pct_change"])
+    t_items += get_t_item("VIX",         f"{vix['end_price']:,.2f}",      vix["pct_change"])
+    t_items += get_t_item("Bitcoin",     f"${btc['end_price']:,.0f}",     btc["pct_change"])
+    t_items += get_t_item("Ethereum",    f"${eth['end_price']:,.0f}",     eth["pct_change"])
+    t_items += get_t_item("10-Yr Yield", f"{tnx['end_price']:,.2f}%",     tnx["pct_change"], abs_val=tnx["abs_change"], is_yield=True)
     ticker_html = f'<div class="ticker-wrapper"><div class="ticker-track">{t_items}{t_items}</div></div>'
 
-    # Dynamic Tone and Badges
+    # ── Dynamic Badges & Takeaway ──────────────────────────────
+    sp_pct = sp["pct_change"]
     market_tone = "▲ Risk-On / Rally" if sp_pct >= 0 else "⬇ Risk-Off / Pullback"
     badge_color = "badge-green" if sp_pct >= 0 else "badge-red"
-    
+
     sp_card_class = "up" if sp_pct >= 0 else ""
-    nd_card_class = "up" if nd_pct >= 0 else ""
-    dj_card_class = "up" if dj_pct >= 0 else ""
+    nd_card_class = "up" if nd["pct_change"] >= 0 else ""
+    dj_card_class = "up" if dj["pct_change"] >= 0 else ""
 
     top_tags = "".join([f'<span class="tag g">{s[0]} ({"+" if s[1]>=0 else ""}{s[1]}%)</span>' for s in top_sectors])
     bot_tags = "".join([f'<span class="tag r">{s[0]} ({"+" if s[1]>=0 else ""}{s[1]}%)</span>' for s in bottom_sectors])
 
-    # Dynamic Institutional Takeaway Generator
+    vix_close = vix["end_price"]
+    tnx_pct   = tnx["pct_change"]
+
     if sp_pct >= 0:
         if tnx_pct > 0:
             takeaway_text = f"The broader market demonstrated impressive resilience this week, advancing despite a backup in Treasury yields. Capital continued to flow into risk assets, signaling that underlying economic growth expectations are currently overpowering interest rate fears. The structural rotation into {top_sectors[0][0]} and {top_sectors[1][0]} suggests institutional participants remain constructive, choosing to buy dips and reallocate rather than retreat to cash."
@@ -151,22 +534,24 @@ def generate_html():
         else:
             takeaway_text = f"The market experienced a methodical, orderly pullback this week rather than outright panic. With the VIX remaining relatively subdued at {vix_close:,.2f}, the price action reflected healthy profit-taking and a rotation out of extended valuations. Portfolio managers tactically trimmed {bottom_sectors[0][0]} while hiding out in {top_sectors[0][0]}, signaling a cautious 'wait-and-see' approach rather than a structural shift to bearishness."
 
-    # Mega-Cap Rows
-    mega_caps = {'AAPL': 'Apple', 'MSFT': 'Microsoft', 'NVDA': 'Nvidia', 'AMZN': 'Amazon', 'META': 'Meta Platforms'}
-    mega_cap_html = ""
-    for tk, name in mega_caps.items():
-        _, _, c_close, c_pct, _ = fetch_weekly_data(tk)
-        c_color = "pos" if c_pct >= 0 else "neg"
-        c_arrow = "▲" if c_pct >= 0 else "▼"
-        c_sign = "+" if c_pct >= 0 else ""
-        mega_cap_html += f'''
-        <div class="co-row">
-          <span class="tkr">{tk}</span>
-          <div class="co-desc"><strong>{name}</strong> closed the week at ${c_close:,.2f}. As a core mega-cap weight, its {c_sign}{c_pct}% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
-          <span class="co-mv {c_color}">{c_arrow} {c_sign}{c_pct}%</span>
-        </div>'''
+    # ── Crypto display ─────────────────────────────────────────
+    def crypto_cell(label, result, fmt=".0f"):
+        p = result["end_price"]
+        pct = result["pct_change"]
+        color = "pos" if pct >= 0 else "neg"
+        arrow = "▲" if pct >= 0 else "▼"
+        price_str = f"${p:,.{fmt.strip('.'+'f')}f}" if fmt == ".0f" else f"${p:,.4f}"
+        return f'''
+      <div class="cc">
+        <div class="cc-name">{label}</div>
+        <div class="cc-price">{price_str}</div>
+        <div class="cc-chg {color}">{arrow} {abs(pct)}% WTD</div>
+      </div>'''
 
-    # Build HTML Template
+    sp_dates = sp["dates"]
+    sp_data  = sp["closes"]
+
+    # ── Build Full HTML ────────────────────────────────────────
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -201,17 +586,12 @@ def generate_html():
   ::-webkit-scrollbar-thumb {{ background: var(--surface2); border-radius: 4px; }}
   ::-webkit-scrollbar-thumb:hover {{ background: var(--muted); }}
 
-  /* STICKY HEADER AND TICKER */
   .top-nav-wrapper {{
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+    position: sticky; top: 0; z-index: 1000;
     background: rgba(9, 9, 15, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
   }}
-
   .masthead {{ padding: 32px 64px 24px; position: relative; overflow: hidden; }}
   .masthead::before {{ content: ''; position: absolute; top: -80px; right: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(232,200,74,0.06) 0%, transparent 65%); pointer-events: none; }}
   .masthead-row {{ display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 24px; }}
@@ -224,45 +604,12 @@ def generate_html():
   .badge-green {{ background: rgba(61,214,140,0.1); border: 1px solid rgba(61,214,140,0.28); color: var(--green); }}
   .pub-date {{ font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }}
 
-  /* SCROLLING TICKER CSS */
-  .ticker-wrapper {{
-    border-top: 1px solid var(--border);
-    overflow: hidden;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    background: rgba(16, 18, 26, 0.5);
-  }}
-  .ticker-track {{
-    display: inline-flex;
-    align-items: center;
-    animation: scrollTicker 45s linear infinite;
-  }}
-  .ticker-track:hover {{
-    animation-play-state: paused;
-  }}
-  @keyframes scrollTicker {{
-    0% {{ transform: translateX(0); }}
-    100% {{ transform: translateX(-50%); }}
-  }}
-  .t-item {{
-    display: inline-flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 12px 36px;
-    min-width: max-content;
-    position: relative;
-  }}
-  .t-item::after {{
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1px;
-    height: 38px;
-    background: var(--border);
-  }}
+  .ticker-wrapper {{ border-top: 1px solid var(--border); overflow: hidden; white-space: nowrap; display: flex; align-items: center; background: rgba(16, 18, 26, 0.5); }}
+  .ticker-track {{ display: inline-flex; align-items: center; animation: scrollTicker 45s linear infinite; }}
+  .ticker-track:hover {{ animation-play-state: paused; }}
+  @keyframes scrollTicker {{ 0% {{ transform: translateX(0); }} 100% {{ transform: translateX(-50%); }} }}
+  .t-item {{ display: inline-flex; flex-direction: column; gap: 2px; padding: 12px 36px; min-width: max-content; position: relative; }}
+  .t-item::after {{ content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 1px; height: 38px; background: var(--border); }}
   .t-name {{ font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }}
   .t-val {{ font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; color: #fff; }}
   .t-chg {{ font-family: 'IBM Plex Mono', monospace; font-size: 10px; }}
@@ -346,7 +693,6 @@ def generate_html():
 </head>
 <body>
 
-<!-- STICKY HEADER & TICKER -->
 <div class="top-nav-wrapper">
   <div class="masthead">
     <div class="masthead-row">
@@ -367,28 +713,26 @@ def generate_html():
   <div class="section">
     <div class="sec-label">Section 01</div>
     <div class="sec-title">Major U.S. Indices</div>
-
     <div class="idx-grid">
       <div class="idx-card {sp_card_class}">
         <div class="idx-name">S&amp;P 500</div>
-        <div class="idx-close">{sp_close:,.2f}</div>
+        <div class="idx-close">{sp['end_price']:,.2f}</div>
         <div class="idx-wtd {'pos' if sp_pct >= 0 else 'neg'}">{"▲" if sp_pct >= 0 else "▼"} {"+" if sp_pct >= 0 else ""}{sp_pct}% WTD</div>
         <div class="idx-note">Reflects broad market performance across the 500 largest U.S. publicly traded companies.</div>
       </div>
       <div class="idx-card {nd_card_class}">
         <div class="idx-name">Nasdaq Composite</div>
-        <div class="idx-close">{nd_close:,.2f}</div>
-        <div class="idx-wtd {'pos' if nd_pct >= 0 else 'neg'}">{"▲" if nd_pct >= 0 else "▼"} {"+" if nd_pct >= 0 else ""}{nd_pct}% WTD</div>
+        <div class="idx-close">{nd['end_price']:,.2f}</div>
+        <div class="idx-wtd {'pos' if nd['pct_change'] >= 0 else 'neg'}">{"▲" if nd['pct_change'] >= 0 else "▼"} {"+" if nd['pct_change'] >= 0 else ""}{nd['pct_change']}% WTD</div>
         <div class="idx-note">Tech-heavy index heavily influenced by mega-cap growth and semiconductor equities.</div>
       </div>
       <div class="idx-card {dj_card_class}">
         <div class="idx-name">Dow Jones Industrial Avg.</div>
-        <div class="idx-close">{dj_close:,.2f}</div>
-        <div class="idx-wtd {'pos' if dj_pct >= 0 else 'neg'}">{"▲" if dj_pct >= 0 else "▼"} {"+" if dj_abs >= 0 else ""}{int(dj_abs)} pts WTD</div>
+        <div class="idx-close">{dj['end_price']:,.2f}</div>
+        <div class="idx-wtd {'pos' if dj['pct_change'] >= 0 else 'neg'}">{"▲" if dj['pct_change'] >= 0 else "▼"} {"+" if dj['abs_change'] >= 0 else ""}{int(dj['abs_change'])} pts WTD</div>
         <div class="idx-note">Price-weighted index representing 30 prominent blue-chip U.S. corporations.</div>
       </div>
     </div>
-    
     <ul class="blist">
       <li><strong>Market Tone:</strong> U.S. equities finished the week {"higher" if sp_pct >= 0 else "lower"}, with the S&P 500 recording a {"+" if sp_pct >= 0 else ""}{sp_pct}% move.</li>
       <li><strong>Volatility Profile:</strong> The VIX closed the week at {vix_close:,.2f}. Levels below 20 generally indicate a calmer equity environment, while prints above 20 signal elevated hedging activity.</li>
@@ -398,7 +742,6 @@ def generate_html():
   <div class="section">
     <div class="sec-label">Section 02</div>
     <div class="sec-title">Sector Performance</div>
-
     <div class="two-col" style="margin-bottom:26px;">
       <div>
         <div class="col-lbl lead">▲ Top Performing Sectors</div>
@@ -422,22 +765,21 @@ def generate_html():
   <div class="section">
     <div class="sec-label">Section 03</div>
     <div class="sec-title">Key Macro &amp; Rates Data</div>
-
     <div class="data-row">
       <div class="dcell">
         <div class="dc-lbl">10-Yr Treasury Yield</div>
-        <div class="dc-val {'hot' if tnx_pct >= 0 else 'cool'}">{tnx_close:,.2f}%</div>
-        <div class="dc-note">Yield {"rose" if tnx_pct >= 0 else "fell"} WTD, acting as a primary driver for broader equity valuations and sector rotation.</div>
+        <div class="dc-val {'hot' if tnx['pct_change'] >= 0 else 'cool'}">{tnx['end_price']:,.2f}%</div>
+        <div class="dc-note">Yield {"rose" if tnx['pct_change'] >= 0 else "fell"} WTD, acting as a primary driver for broader equity valuations and sector rotation.</div>
       </div>
       <div class="dcell">
         <div class="dc-lbl">U.S. Dollar Index (DXY)</div>
-        <div class="dc-val {'hot' if dxy_pct >= 0 else 'cool'}">{dxy_close:,.2f}</div>
-        <div class="dc-note">The Dollar {"strengthened" if dxy_pct >= 0 else "weakened"} by {abs(dxy_pct)}% over the 5-day period, impacting multinational revenue expectations.</div>
+        <div class="dc-val {'hot' if dxy['pct_change'] >= 0 else 'cool'}">{dxy['end_price']:,.2f}</div>
+        <div class="dc-note">The Dollar {"strengthened" if dxy['pct_change'] >= 0 else "weakened"} by {abs(dxy['pct_change'])}% over the 5-day period, impacting multinational revenue expectations.</div>
       </div>
       <div class="dcell">
         <div class="dc-lbl">13-Week T-Bill Yield</div>
-        <div class="dc-val">{irx_close:,.2f}%</div>
-        <div class="dc-note">Tracks closely with the Federal Funds Rate. Yield moved by {abs(irx_pct)}% this week.</div>
+        <div class="dc-val">{irx['end_price']:,.2f}%</div>
+        <div class="dc-note">Tracks closely with the Federal Funds Rate. Yield moved by {abs(irx['pct_change'])}% this week.</div>
       </div>
     </div>
   </div>
@@ -445,35 +787,32 @@ def generate_html():
   <div class="section">
     <div class="sec-label">Section 04</div>
     <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
-    <div style="margin-bottom:20px;">
-      {mega_cap_html}
-    </div>
+    <div style="margin-bottom:20px;">{mega_cap_html}</div>
   </div>
 
   <div class="section">
     <div class="sec-label">Section 05</div>
     <div class="sec-title">Cryptocurrency Market Recap</div>
-
     <div class="crypto-grid">
       <div class="cc">
         <div class="cc-name">Bitcoin (BTC)</div>
-        <div class="cc-price">${btc_close:,.0f}</div>
-        <div class="cc-chg {'pos' if btc_pct >= 0 else 'neg'}">{"▲" if btc_pct >= 0 else "▼"} {abs(btc_pct)}% WTD</div>
+        <div class="cc-price">${btc['end_price']:,.0f}</div>
+        <div class="cc-chg {'pos' if btc['pct_change'] >= 0 else 'neg'}">{"▲" if btc['pct_change'] >= 0 else "▼"} {abs(btc['pct_change'])}% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Ethereum (ETH)</div>
-        <div class="cc-price">${eth_close:,.0f}</div>
-        <div class="cc-chg {'pos' if eth_pct >= 0 else 'neg'}">{"▲" if eth_pct >= 0 else "▼"} {abs(eth_pct)}% WTD</div>
+        <div class="cc-price">${eth['end_price']:,.0f}</div>
+        <div class="cc-chg {'pos' if eth['pct_change'] >= 0 else 'neg'}">{"▲" if eth['pct_change'] >= 0 else "▼"} {abs(eth['pct_change'])}% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Solana (SOL)</div>
-        <div class="cc-price">${sol_close:,.2f}</div>
-        <div class="cc-chg {'pos' if sol_pct >= 0 else 'neg'}">{"▲" if sol_pct >= 0 else "▼"} {abs(sol_pct)}% WTD</div>
+        <div class="cc-price">${sol['end_price']:,.2f}</div>
+        <div class="cc-chg {'pos' if sol['pct_change'] >= 0 else 'neg'}">{"▲" if sol['pct_change'] >= 0 else "▼"} {abs(sol['pct_change'])}% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">XRP</div>
-        <div class="cc-price">${xrp_close:,.4f}</div>
-        <div class="cc-chg {'pos' if xrp_pct >= 0 else 'neg'}">{"▲" if xrp_pct >= 0 else "▼"} {abs(xrp_pct)}% WTD</div>
+        <div class="cc-price">${xrp['end_price']:,.4f}</div>
+        <div class="cc-chg {'pos' if xrp['pct_change'] >= 0 else 'neg'}">{"▲" if xrp['pct_change'] >= 0 else "▼"} {abs(xrp['pct_change'])}% WTD</div>
       </div>
     </div>
   </div>
@@ -481,24 +820,17 @@ def generate_html():
   <div class="section">
     <div class="sec-label">Section 06</div>
     <div class="sec-title">Global Market Context</div>
-
     <table class="gtable" style="margin-bottom:26px;">
-      <thead>
-        <tr>
-          <th>Index / Asset</th>
-          <th>WTD Performance</th>
-          <th>Status</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Index / Asset</th><th>WTD Performance</th><th>Status</th></tr></thead>
       <tbody>
         <tr>
           <td>Nikkei 225 (Japan)</td>
-          <td class="{'pos' if n225_pct >= 0 else 'neg'}">{"+" if n225_pct >= 0 else ""}{n225_pct}%</td>
+          <td class="{'pos' if n225['pct_change'] >= 0 else 'neg'}">{"+" if n225['pct_change'] >= 0 else ""}{n225['pct_change']}%</td>
           <td>Japanese equities tracked broader global momentum flows this week.</td>
         </tr>
         <tr>
           <td>Euro Stoxx 50 (EU)</td>
-          <td class="{'pos' if stoxx_pct >= 0 else 'neg'}">{"+" if stoxx_pct >= 0 else ""}{stoxx_pct}%</td>
+          <td class="{'pos' if stoxx['pct_change'] >= 0 else 'neg'}">{"+" if stoxx['pct_change'] >= 0 else ""}{stoxx['pct_change']}%</td>
           <td>European blue-chip stocks digested the latest economic policy signaling.</td>
         </tr>
       </tbody>
@@ -508,23 +840,28 @@ def generate_html():
   <div class="section">
     <div class="sec-label">Section 07</div>
     <div class="sec-title">Investor Takeaway</div>
-    <div class="takeaway">
-      {takeaway_text}
-    </div>
+    <div class="takeaway">{takeaway_text}</div>
   </div>
 
   <div class="section">
     <div class="sec-label">Section 08</div>
     <div class="sec-title">Looking Ahead to Next Week</div>
-
     <div class="ahead-grid" style="margin-bottom:24px;">
       <div class="ahead-cell">
         <div class="ahead-day">Macro &amp; Economic Data</div>
-        <div class="ahead-ev">Investors will focus heavily on upcoming inflation prints and labor market reports to gauge the broader health of the consumer and the trajectory of monetary policy.</div>
+        <div class="ahead-ev">{lookahead['macro']}</div>
       </div>
       <div class="ahead-cell">
         <div class="ahead-day">Federal Reserve Policy</div>
-        <div class="ahead-ev">Speeches from regional Fed presidents and FOMC members will be closely monitored for clues regarding interest rate adjustments and balance sheet runoff.</div>
+        <div class="ahead-ev">{lookahead['fed_policy']}</div>
+      </div>
+      <div class="ahead-cell">
+        <div class="ahead-day">Earnings &amp; Catalysts</div>
+        <div class="ahead-ev">{lookahead['earnings_and_catalysts']}</div>
+      </div>
+      <div class="ahead-cell">
+        <div class="ahead-day">Key Risk Factors</div>
+        <div class="ahead-ev">{lookahead['risk_factors']}</div>
       </div>
     </div>
   </div>
@@ -540,7 +877,6 @@ def generate_html():
       <canvas id="spxChart" height="200"></canvas>
     </div>
   </div>
-
 </div>
 
 <div class="footer">
@@ -552,14 +888,10 @@ def generate_html():
 <script>
 const labels = {json.dumps(sp_dates)};
 const prices = {json.dumps(sp_data)};
-
 const ctx = document.getElementById('spxChart').getContext('2d');
-
-// Dynamic Min/Max calculation so the chart line isn't artificially flat
 const minPrice = Math.min(...prices);
 const maxPrice = Math.max(...prices);
 const yPadding = (maxPrice - minPrice) * 0.15 || maxPrice * 0.01;
-
 new Chart(ctx, {{
   type: 'line',
   data: {{
@@ -603,8 +935,7 @@ new Chart(ctx, {{
             return ` WTD: ${{chg > 0 ? '+' : ''}}${{chg}}%`;
           }}
         }}
-      }},
-      annotation: {{}}
+      }}
     }},
     scales: {{
       x: {{
@@ -632,7 +963,8 @@ new Chart(ctx, {{
 
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
-    print("Successfully generated true data-driven index.html")
+    print(f"✓ Successfully generated index.html for {full_date}")
+
 
 if __name__ == "__main__":
     generate_html()
