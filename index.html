@@ -32,17 +32,12 @@
   ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-  /* STICKY HEADER AND TICKER */
   .top-nav-wrapper {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+    position: sticky; top: 0; z-index: 1000;
     background: rgba(9, 9, 15, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
   }
-
   .masthead { padding: 32px 64px 24px; position: relative; overflow: hidden; }
   .masthead::before { content: ''; position: absolute; top: -80px; right: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(232,200,74,0.06) 0%, transparent 65%); pointer-events: none; }
   .masthead-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 24px; }
@@ -55,45 +50,12 @@
   .badge-green { background: rgba(61,214,140,0.1); border: 1px solid rgba(61,214,140,0.28); color: var(--green); }
   .pub-date { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
 
-  /* SCROLLING TICKER CSS */
-  .ticker-wrapper {
-    border-top: 1px solid var(--border);
-    overflow: hidden;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    background: rgba(16, 18, 26, 0.5);
-  }
-  .ticker-track {
-    display: inline-flex;
-    align-items: center;
-    animation: scrollTicker 45s linear infinite;
-  }
-  .ticker-track:hover {
-    animation-play-state: paused;
-  }
-  @keyframes scrollTicker {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-  .t-item {
-    display: inline-flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 12px 36px;
-    min-width: max-content;
-    position: relative;
-  }
-  .t-item::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1px;
-    height: 38px;
-    background: var(--border);
-  }
+  .ticker-wrapper { border-top: 1px solid var(--border); overflow: hidden; white-space: nowrap; display: flex; align-items: center; background: rgba(16, 18, 26, 0.5); }
+  .ticker-track { display: inline-flex; align-items: center; animation: scrollTicker 45s linear infinite; }
+  .ticker-track:hover { animation-play-state: paused; }
+  @keyframes scrollTicker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .t-item { display: inline-flex; flex-direction: column; gap: 2px; padding: 12px 36px; min-width: max-content; position: relative; }
+  .t-item::after { content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 1px; height: 38px; background: var(--border); }
   .t-name { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }
   .t-val { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; color: #fff; }
   .t-chg { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
@@ -177,7 +139,6 @@
 </head>
 <body>
 
-<!-- STICKY HEADER & TICKER -->
 <div class="top-nav-wrapper">
   <div class="masthead">
     <div class="masthead-row">
@@ -192,113 +153,112 @@
     </div>
   </div>
   <div class="ticker-wrapper"><div class="ticker-track">
-        <div class="t-item">
-          <div class="t-name">S&P 500</div>
-          <div class="t-val">6,506.48</div>
-          <div class="t-chg neg">▼ -1.9% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Nasdaq</div>
-          <div class="t-val">21,647.61</div>
-          <div class="t-chg neg">▼ -2.07% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">DJIA</div>
-          <div class="t-val">45,577.47</div>
-          <div class="t-chg neg">▼ -981 pts WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Russell 2000</div>
-          <div class="t-val">2,438.45</div>
-          <div class="t-chg neg">▼ -1.68% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Crude Oil</div>
-          <div class="t-val">$98.09</div>
-          <div class="t-chg pos">▲ +4.91% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Gold</div>
-          <div class="t-val">$4,492.00</div>
-          <div class="t-chg neg">▼ -10.05% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">VIX</div>
-          <div class="t-val">26.78</div>
-          <div class="t-chg neg">▼ -1.51% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Bitcoin</div>
-          <div class="t-val">$70,806</div>
-          <div class="t-chg neg">▼ -2.73% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Ethereum</div>
-          <div class="t-val">$2,157</div>
-          <div class="t-chg neg">▼ -0.92% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">10-Yr Yield</div>
-          <div class="t-val">4.39%</div>
-          <div class="t-chg pos">▲ +11 bps WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">S&P 500</div>
-          <div class="t-val">6,506.48</div>
-          <div class="t-chg neg">▼ -1.9% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Nasdaq</div>
-          <div class="t-val">21,647.61</div>
-          <div class="t-chg neg">▼ -2.07% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">DJIA</div>
-          <div class="t-val">45,577.47</div>
-          <div class="t-chg neg">▼ -981 pts WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Russell 2000</div>
-          <div class="t-val">2,438.45</div>
-          <div class="t-chg neg">▼ -1.68% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Crude Oil</div>
-          <div class="t-val">$98.09</div>
-          <div class="t-chg pos">▲ +4.91% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Gold</div>
-          <div class="t-val">$4,492.00</div>
-          <div class="t-chg neg">▼ -10.05% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">VIX</div>
-          <div class="t-val">26.78</div>
-          <div class="t-chg neg">▼ -1.51% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Bitcoin</div>
-          <div class="t-val">$70,806</div>
-          <div class="t-chg neg">▼ -2.73% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">Ethereum</div>
-          <div class="t-val">$2,157</div>
-          <div class="t-chg neg">▼ -0.92% WTD</div>
-        </div>
-        <div class="t-item">
-          <div class="t-name">10-Yr Yield</div>
-          <div class="t-val">4.39%</div>
-          <div class="t-chg pos">▲ +11 bps WTD</div>
-        </div></div></div>
+    <div class="t-item">
+      <div class="t-name">S&P 500</div>
+      <div class="t-val">6,506.48</div>
+      <div class="t-chg neg">▼ -1.9% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Nasdaq</div>
+      <div class="t-val">21,647.61</div>
+      <div class="t-chg neg">▼ -2.07% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">DJIA</div>
+      <div class="t-val">45,577.47</div>
+      <div class="t-chg neg">▼ -981 pts WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Russell 2000</div>
+      <div class="t-val">2,438.45</div>
+      <div class="t-chg neg">▼ -1.68% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Crude Oil</div>
+      <div class="t-val">$98.09</div>
+      <div class="t-chg pos">▲ +4.91% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Gold</div>
+      <div class="t-val">$4,492.00</div>
+      <div class="t-chg neg">▼ -10.05% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">VIX</div>
+      <div class="t-val">26.78</div>
+      <div class="t-chg neg">▼ -1.51% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Bitcoin</div>
+      <div class="t-val">$70,539</div>
+      <div class="t-chg neg">▼ -3.09% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Ethereum</div>
+      <div class="t-val">$2,147</div>
+      <div class="t-chg neg">▼ -1.39% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">10-Yr Yield</div>
+      <div class="t-val">4.39%</div>
+      <div class="t-chg pos">▲ +11 bps WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">S&P 500</div>
+      <div class="t-val">6,506.48</div>
+      <div class="t-chg neg">▼ -1.9% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Nasdaq</div>
+      <div class="t-val">21,647.61</div>
+      <div class="t-chg neg">▼ -2.07% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">DJIA</div>
+      <div class="t-val">45,577.47</div>
+      <div class="t-chg neg">▼ -981 pts WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Russell 2000</div>
+      <div class="t-val">2,438.45</div>
+      <div class="t-chg neg">▼ -1.68% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Crude Oil</div>
+      <div class="t-val">$98.09</div>
+      <div class="t-chg pos">▲ +4.91% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Gold</div>
+      <div class="t-val">$4,492.00</div>
+      <div class="t-chg neg">▼ -10.05% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">VIX</div>
+      <div class="t-val">26.78</div>
+      <div class="t-chg neg">▼ -1.51% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Bitcoin</div>
+      <div class="t-val">$70,539</div>
+      <div class="t-chg neg">▼ -3.09% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">Ethereum</div>
+      <div class="t-val">$2,147</div>
+      <div class="t-chg neg">▼ -1.39% WTD</div>
+    </div>
+    <div class="t-item">
+      <div class="t-name">10-Yr Yield</div>
+      <div class="t-val">4.39%</div>
+      <div class="t-chg pos">▲ +11 bps WTD</div>
+    </div></div></div>
 </div>
 
 <div class="container">
   <div class="section">
     <div class="sec-label">Section 01</div>
     <div class="sec-title">Major U.S. Indices</div>
-
     <div class="idx-grid">
       <div class="idx-card ">
         <div class="idx-name">S&amp;P 500</div>
@@ -319,7 +279,6 @@
         <div class="idx-note">Price-weighted index representing 30 prominent blue-chip U.S. corporations.</div>
       </div>
     </div>
-    
     <ul class="blist">
       <li><strong>Market Tone:</strong> U.S. equities finished the week lower, with the S&P 500 recording a -1.9% move.</li>
       <li><strong>Volatility Profile:</strong> The VIX closed the week at 26.78. Levels below 20 generally indicate a calmer equity environment, while prints above 20 signal elevated hedging activity.</li>
@@ -329,7 +288,6 @@
   <div class="section">
     <div class="sec-label">Section 02</div>
     <div class="sec-title">Sector Performance</div>
-
     <div class="two-col" style="margin-bottom:26px;">
       <div>
         <div class="col-lbl lead">▲ Top Performing Sectors</div>
@@ -353,7 +311,6 @@
   <div class="section">
     <div class="sec-label">Section 03</div>
     <div class="sec-title">Key Macro &amp; Rates Data</div>
-
     <div class="data-row">
       <div class="dcell">
         <div class="dc-lbl">10-Yr Treasury Yield</div>
@@ -377,7 +334,6 @@
     <div class="sec-label">Section 04</div>
     <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
     <div style="margin-bottom:20px;">
-      
         <div class="co-row">
           <span class="tkr">AAPL</span>
           <div class="co-desc"><strong>Apple</strong> closed the week at $247.99. As a core mega-cap weight, its -0.85% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
@@ -402,34 +358,32 @@
           <span class="tkr">META</span>
           <div class="co-desc"><strong>Meta Platforms</strong> closed the week at $593.66. As a core mega-cap weight, its -3.18% weekly move directly drove structural flows in the broader technology sector and index momentum.</div>
           <span class="co-mv neg">▼ -3.18%</span>
-        </div>
-    </div>
+        </div></div>
   </div>
 
   <div class="section">
     <div class="sec-label">Section 05</div>
     <div class="sec-title">Cryptocurrency Market Recap</div>
-
     <div class="crypto-grid">
       <div class="cc">
         <div class="cc-name">Bitcoin (BTC)</div>
-        <div class="cc-price">$70,806</div>
-        <div class="cc-chg neg">▼ 2.73% WTD</div>
+        <div class="cc-price">$70,539</div>
+        <div class="cc-chg neg">▼ 3.09% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Ethereum (ETH)</div>
-        <div class="cc-price">$2,157</div>
-        <div class="cc-chg neg">▼ 0.92% WTD</div>
+        <div class="cc-price">$2,147</div>
+        <div class="cc-chg neg">▼ 1.39% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Solana (SOL)</div>
-        <div class="cc-price">$90.12</div>
-        <div class="cc-chg neg">▼ 2.31% WTD</div>
+        <div class="cc-price">$89.87</div>
+        <div class="cc-chg neg">▼ 2.58% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">XRP</div>
-        <div class="cc-price">$1.4500</div>
-        <div class="cc-chg pos">▲ 0.17% WTD</div>
+        <div class="cc-price">$1.4400</div>
+        <div class="cc-chg neg">▼ 0.52% WTD</div>
       </div>
     </div>
   </div>
@@ -437,15 +391,8 @@
   <div class="section">
     <div class="sec-label">Section 06</div>
     <div class="sec-title">Global Market Context</div>
-
     <table class="gtable" style="margin-bottom:26px;">
-      <thead>
-        <tr>
-          <th>Index / Asset</th>
-          <th>WTD Performance</th>
-          <th>Status</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Index / Asset</th><th>WTD Performance</th><th>Status</th></tr></thead>
       <tbody>
         <tr>
           <td>Nikkei 225 (Japan)</td>
@@ -464,23 +411,28 @@
   <div class="section">
     <div class="sec-label">Section 07</div>
     <div class="sec-title">Investor Takeaway</div>
-    <div class="takeaway">
-      This week's price action was characterized by a sharp defensive rotation and a spike in hedging activity, with the VIX pushing to 26.78. Investors aggressively de-risked portfolios, shedding exposure in Real Estate (XLRE) and moving capital toward the relative safety of Energy (XLE). The dominant theme was capital preservation as the market rapidly recalibrated to shifting macroeconomic headwinds.
-    </div>
+    <div class="takeaway">This week's price action was characterized by a sharp defensive rotation and a spike in hedging activity, with the VIX pushing to 26.78. Investors aggressively de-risked portfolios, shedding exposure in Real Estate (XLRE) and moving capital toward the relative safety of Energy (XLE). The dominant theme was capital preservation as the market rapidly recalibrated to shifting macroeconomic headwinds.</div>
   </div>
 
   <div class="section">
     <div class="sec-label">Section 08</div>
     <div class="sec-title">Looking Ahead to Next Week</div>
-
     <div class="ahead-grid" style="margin-bottom:24px;">
       <div class="ahead-cell">
         <div class="ahead-day">Macro &amp; Economic Data</div>
-        <div class="ahead-ev">Investors will focus heavily on upcoming inflation prints and labor market reports to gauge the broader health of the consumer and the trajectory of monetary policy.</div>
+        <div class="ahead-ev">Investors will monitor upcoming inflation and labor market prints for direction on the consumer backdrop. Given the 10-year at 4.39%, any upside surprise in price data could reignite rate pressure on rate-sensitive names like those in Real Estate (XLRE).</div>
       </div>
       <div class="ahead-cell">
         <div class="ahead-day">Federal Reserve Policy</div>
-        <div class="ahead-ev">Speeches from regional Fed presidents and FOMC members will be closely monitored for clues regarding interest rate adjustments and balance sheet runoff.</div>
+        <div class="ahead-ev">The Fed remains data-dependent with yields at 4.39%. Scheduled FOMC member speeches will be parsed for consensus on the rate path — any hawkish lean could trigger another leg of pressure on growth equities.</div>
+      </div>
+      <div class="ahead-cell">
+        <div class="ahead-day">Earnings &amp; Catalysts</div>
+        <div class="ahead-ev">Earnings season continues with sector rotation firmly in focus. Reports from Energy (XLE) constituents will be watched for guidance confirmation, while results from lagging sectors will be scrutinised for signs of stabilisation.</div>
+      </div>
+      <div class="ahead-cell">
+        <div class="ahead-day">Key Risk Factors</div>
+        <div class="ahead-ev">With the VIX at 26.78, the market is pricing elevated tail risk. Geopolitical developments, surprise macro data, and any Fed communication shift remain the primary exogenous risk factors heading into the new week.</div>
       </div>
     </div>
   </div>
@@ -496,7 +448,6 @@
       <canvas id="spxChart" height="200"></canvas>
     </div>
   </div>
-
 </div>
 
 <div class="footer">
@@ -508,14 +459,10 @@
 <script>
 const labels = ["Mon 03/16", "Tue 03/17", "Wed 03/18", "Thu 03/19", "Fri 03/20"];
 const prices = [6699.38, 6716.09, 6624.7, 6606.49, 6506.48];
-
 const ctx = document.getElementById('spxChart').getContext('2d');
-
-// Dynamic Min/Max calculation so the chart line isn't artificially flat
 const minPrice = Math.min(...prices);
 const maxPrice = Math.max(...prices);
 const yPadding = (maxPrice - minPrice) * 0.15 || maxPrice * 0.01;
-
 new Chart(ctx, {
   type: 'line',
   data: {
@@ -559,8 +506,7 @@ new Chart(ctx, {
             return ` WTD: ${chg > 0 ? '+' : ''}${chg}%`;
           }
         }
-      },
-      annotation: {}
+      }
     },
     scales: {
       x: {
