@@ -373,6 +373,15 @@ def generate_html():
         fallback=mc_fallback,
     )
 
+    # ── Mega-cap logo domains for Clearbit ────────────────────
+    logo_domains = {
+        'AAPL': 'apple.com',
+        'MSFT': 'microsoft.com',
+        'NVDA': 'nvidia.com',
+        'AMZN': 'amazon.com',
+        'META': 'meta.com',
+    }
+
     mega_cap_html = ""
     for tk, v in mega_cap_data.items():
         r       = v["result"]
@@ -383,9 +392,14 @@ def generate_html():
         c_sign  = "+" if c_pct >= 0 else ""
         err_note = ' <span style="color:var(--red);font-size:10px;">(data error)</span>' if r["error"] else ""
         desc    = mc_descriptions.get(tk, mc_fallback.get(tk, ""))
+        domain  = logo_domains.get(tk, "")
+        logo_html = f'<img src="https://logo.clearbit.com/{domain}" class="tkr-logo" alt="{tk}" onerror="this.style.display=\'none\'">' if domain else ""
         mega_cap_html += f"""
         <div class="co-row">
-          <span class="tkr">{tk}</span>
+          <div class="tkr-wrap">
+            {logo_html}
+            <span class="tkr">{tk}</span>
+          </div>
           <div class="co-desc"><strong>{v['name']}</strong>{err_note} {desc}</div>
           <span class="co-mv {c_color}">{c_arrow} {c_sign}{c_pct}%</span>
         </div>"""
@@ -556,7 +570,9 @@ def generate_html():
   .dc-note {{ font-size: 11px; color: var(--label); line-height: 1.45; }}
   .co-row {{ display: flex; align-items: flex-start; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--border); }}
   .co-row:last-child {{ border-bottom: none; }}
-  .tkr {{ font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; background: var(--surface2); border: 1px solid var(--border); padding: 4px 9px; min-width: 66px; text-align: center; flex-shrink: 0; margin-top: 1px; border-radius: 2px; color: #fff; }}
+  .tkr-wrap {{ display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }}
+  .tkr-logo {{ width: 28px; height: 28px; border-radius: 6px; object-fit: contain; background: #fff; padding: 3px; }}
+  .tkr {{ font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; background: var(--surface2); border: 1px solid var(--border); padding: 4px 9px; min-width: 66px; text-align: center; flex-shrink: 0; border-radius: 2px; color: #fff; }}
   .co-desc {{ font-size: 13.5px; color: #bcc3d6; line-height: 1.55; flex: 1; }}
   .co-mv {{ font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; flex-shrink: 0; margin-top: 2px; font-weight: 500; }}
   .crypto-grid {{ display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; margin-bottom: 26px; }}
