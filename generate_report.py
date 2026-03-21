@@ -408,6 +408,28 @@ def generate_html():
         "week_end_date":  week_end_date,
     })
 
+    # ── CLAUDE: Global market status descriptions (Section 06) ─
+    print("Generating global market context via Claude...")
+    global_prompt = (
+        "You are writing one-sentence status descriptions for a weekly global equity market summary. "
+        "Each sentence must be specific to the index named and its actual performance — do not be generic. "
+        "Do NOT start with the index name. Start with the insight or dynamic directly. "
+        "Respond ONLY with JSON with keys: nikkei, stoxx. No markdown.\n\n"
+        f"Nikkei 225 (Japan): {'+' if n225['pct_change'] >= 0 else ''}{n225['pct_change']}% WTD\n"
+        f"Euro Stoxx 50 (EU): {'+' if stoxx['pct_change'] >= 0 else ''}{stoxx['pct_change']}% WTD\n"
+        f"S&P 500 context: {'+' if sp_pct >= 0 else ''}{sp_pct}% WTD, VIX {vix_close:.2f}, 10-yr yield {tnx['end_price']:.2f}%"
+    )
+    global_fallback = {
+        "nikkei": "Japanese equities tracked broader global momentum flows this week.",
+        "stoxx": "European blue-chip stocks digested the latest economic policy signaling.",
+    }
+    global_status = claude_json(
+        global_prompt,
+        required_keys={"nikkei", "stoxx"},
+        max_tokens=150,
+        fallback=global_fallback,
+    )
+
     # ── CLAUDE: Investor Takeaway (Section 07) ─────────────────
     print("Generating investor takeaway via Claude...")
     takeaway_prompt = (
@@ -701,12 +723,12 @@ def generate_html():
         <tr>
           <td>Nikkei 225 (Japan)</td>
           <td class="{'pos' if n225['pct_change'] >= 0 else 'neg'}">{"+" if n225['pct_change'] >= 0 else ""}{n225['pct_change']}%</td>
-          <td>Japanese equities tracked broader global momentum flows this week.</td>
+          <td>{global_status['nikkei']}</td>
         </tr>
         <tr>
           <td>Euro Stoxx 50 (EU)</td>
           <td class="{'pos' if stoxx['pct_change'] >= 0 else 'neg'}">{"+" if stoxx['pct_change'] >= 0 else ""}{stoxx['pct_change']}%</td>
-          <td>European blue-chip stocks digested the latest economic policy signaling.</td>
+          <td>{global_status['stoxx']}</td>
         </tr>
       </tbody>
     </table>
