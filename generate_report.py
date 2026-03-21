@@ -12,7 +12,7 @@ import urllib.request
 # Repo → Settings → Secrets → Actions → New repository secret
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-ANTHROPIC_MODEL   = "claude-haiku-4-5-20251001"
+ANTHROPIC_MODEL   = "claude-haiku-4-5"
 
 # Sanity-check bounds for commodity prices (to catch stale/bad yfinance data)
 SANITY_BOUNDS = {
@@ -58,10 +58,15 @@ def fetch_weekly_data(ticker_symbol):
     for tk in tickers_to_try:
         try:
             ticker = yf.Ticker(tk)
-            hist = ticker.history(period="6d")
+            hist = ticker.history(period="10d")
             if len(hist) < 2:
                 continue
-            prev_close = hist['Close'].iloc[0]
+            # Use the close from >5 trading days ago as the WTD baseline
+            # This handles holiday-shortened weeks correctly
+            if len(hist) > 5:
+                prev_close = hist['Close'].iloc[-6]  # 6th-to-last = prior Friday
+            else:
+                prev_close = hist['Close'].iloc[0]
             chart_hist = hist.iloc[-5:]
             dates = [d.strftime('%a %m/%d') for d in chart_hist.index]
             closes = [round(float(val), 2) for val in chart_hist['Close'].tolist()]
@@ -127,7 +132,13 @@ def claude_json(prompt, required_keys, max_tokens=600, fallback=None):
     if not raw:
         return fallback or {}
     try:
-        clean = raw.replace("```json", "").replace("```", "").strip()
+        # Robustly extract JSON — find first { to last } to handle
+        # any preamble, language tags, or trailing text Claude might add
+        start_idx = raw.find('{')
+        end_idx   = raw.rfind('}')
+        if start_idx == -1 or end_idx == -1:
+            raise ValueError("No JSON object found in response")
+        clean = raw[start_idx:end_idx + 1]
         result = json.loads(clean)
         if not required_keys.issubset(result.keys()):
             raise ValueError(f"Missing keys: {required_keys - result.keys()}")
@@ -266,12 +277,15 @@ def generate_html():
     n225  = fetch_weekly_data('^N225')
     stoxx = fetch_weekly_data('^STOXX50E')
 
-    # Date range from live S&P data
+    # Date range — parse directly from sp["dates"] (already fetched, no second call)
     if sp["dates"]:
+        # sp["dates"] are formatted as "%a %m/%d" — reconstruct full dates from closes index
         sp_ticker = yf.Ticker('^GSPC')
-        sp_hist   = sp_ticker.history(period="5d")
-        start_dt  = sp_hist.index[0].to_pydatetime()
-        end_dt    = sp_hist.index[-1].to_pydatetime()
+        sp_hist   = sp_ticker.history(period="10d")  # 10d to survive holiday weeks
+        # Find the last 5 trading days (the current week)
+        trading_days = sp_hist.iloc[-5:] if len(sp_hist) >= 5 else sp_hist
+        start_dt  = trading_days.index[0].to_pydatetime()
+        end_dt    = trading_days.index[-1].to_pydatetime()
         week_start_str = fmt_date(start_dt)
         today_str      = fmt_date(end_dt)
         year_str       = end_dt.strftime('%Y')
@@ -472,7 +486,7 @@ def generate_html():
         f"as {vix_note} characterized the tape. Sector rotation favored {top_sectors[0][0]} while "
         f"{bottom_sectors[0][0]} faced the heaviest selling pressure."
     )
-    takeaway_text = claude(takeaway_prompt, max_tokens=250, fallback=takeaway_fallback)
+    takeaway_text = claude(takeaway_prompt, max_tokens=400, fallback=takeaway_fallback)
 
     # ── Ticker Bar ─────────────────────────────────────────────
     t_items  = get_t_item("S&P 500",      f"{sp['end_price']:,.2f}",    sp_pct)
