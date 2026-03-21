@@ -3,7 +3,6 @@ import datetime
 import json
 import os
 import urllib.request
-import urllib.parse
 
 # ─────────────────────────────────────────────
 # CONFIGURATION
@@ -11,7 +10,6 @@ import urllib.parse
 
 # GitHub Actions secrets — add both in:
 # Repo → Settings → Secrets → Actions → New repository secret
-FMP_API_KEY       = os.environ.get("FMP_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_MODEL   = "claude-haiku-4-5-20251001"
@@ -140,200 +138,78 @@ def claude_json(prompt, required_keys, max_tokens=600, fallback=None):
 
 
 # ─────────────────────────────────────────────
-# FMP ECONOMIC CALENDAR — SECTION 08
+# CLAUDE-POWERED SECTION 08 GENERATOR
+# Uses Claude to write forward-looking analysis
+# grounded in this week's actual market data.
 # ─────────────────────────────────────────────
 
-_FED_KEYWORDS = [
-    "fed", "fomc", "federal reserve", "powell", "waller", "williams",
-    "jefferson", "cook", "kashkari", "bostic", "daly", "barkin",
-    "kugler", "musalem", "collins", "goolsbee", "balance sheet",
-    "interest rate decision", "monetary policy",
-]
-_EARNINGS_KEYWORDS = ["earnings", "eps", "revenue", "guidance", "results", "quarterly"]
-_RISK_KEYWORDS = [
-    "geopolit", "opec", "tariff", "trade", "debt ceiling", "auction",
-    "treasury auction", "bond auction", "default", "sanction",
-    "election", "referendum", "central bank", "ecb", "boj", "boe",
-    "pboc", "imf", "world bank",
-]
-_MIN_IMPACT = {"High", "Medium"}
+def generate_lookahead_claude(market_context):
+    """
+    Calls Claude to generate four forward-looking Section 08 cells
+    based on this week's actual market data. Falls back to rule-based
+    text per-cell if the API call fails.
+    """
+    sp_pct    = market_context["sp_pct"]
+    vix       = market_context["vix_close"]
+    tnx       = market_context["tnx_close"]
+    tnx_pct   = market_context["tnx_pct"]
+    dxy       = market_context["dxy_close"]
+    dxy_pct   = market_context["dxy_pct"]
+    top1      = market_context["top_sectors"].split(", ")[0]
+    top2      = market_context["top_sectors"].split(", ")[1] if ", " in market_context["top_sectors"] else ""
+    bot1      = market_context["bottom_sectors"].split(", ")[0]
+    btc_pct   = market_context["btc_pct"]
+    oil_pct   = market_context["oil_pct"]
+    gold_pct  = market_context["gold_pct"]
 
+    prompt = (
+        "You are a senior equity strategist writing the Looking Ahead section of a weekly market summary. "
+        "Write four short paragraphs (2-3 sentences each) for next week. Be specific, analytical, and "
+        "grounded in the data below — do not be generic. Reference actual numbers where relevant.\n\n"
+        f"This week: S&P 500 {'+' if sp_pct >= 0 else ''}{sp_pct}% WTD, "
+        f"VIX {vix:.2f}, 10-yr yield {tnx:.2f}% ({'+' if tnx_pct >= 0 else ''}{tnx_pct}% WTD), "
+        f"DXY {dxy:.2f} ({'+' if dxy_pct >= 0 else ''}{dxy_pct}% WTD), "
+        f"Gold {'+' if gold_pct >= 0 else ''}{gold_pct}% WTD, "
+        f"Crude {'+' if oil_pct >= 0 else ''}{oil_pct}% WTD, "
+        f"BTC {'+' if btc_pct >= 0 else ''}{btc_pct}% WTD. "
+        f"Top sectors: {market_context['top_sectors']}. "
+        f"Bottom sectors: {market_context['bottom_sectors']}.\n\n"
+        "Respond ONLY with a JSON object with these exact keys: macro, fed_policy, earnings_and_catalysts, risk_factors. "
+        "No markdown, no preamble."
+    )
 
-def _fetch_fmp_calendar(from_date, to_date):
-    if not FMP_API_KEY:
-        print("  FMP_API_KEY not set — skipping calendar fetch.")
-        return []
-    params = urllib.parse.urlencode({"from": from_date, "to": to_date, "apikey": FMP_API_KEY})
-    url = f"https://financialmodelingprep.com/api/v3/economic_calendar?{params}"
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "market-summary-bot/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        if isinstance(data, list):
-            filtered = [
-                e for e in data
-                if e.get("country", "").upper() in ("US", "USD", "")
-                and e.get("impact", "Low") in _MIN_IMPACT
-            ]
-            print(f"  FMP returned {len(data)} events, {len(filtered)} US medium/high impact.")
-            return filtered
-        return []
-    except Exception as e:
-        print(f"  FMP calendar fetch failed: {e}")
-        return []
-
-
-def _categorise_events(events):
-    buckets = {"macro": [], "fed": [], "earnings": [], "risk": []}
-    for e in events:
-        name_lower = e.get("event", "").lower()
-        if any(k in name_lower for k in _FED_KEYWORDS):
-            buckets["fed"].append(e)
-        elif any(k in name_lower for k in _EARNINGS_KEYWORDS):
-            buckets["earnings"].append(e)
-        elif any(k in name_lower for k in _RISK_KEYWORDS):
-            buckets["risk"].append(e)
-        else:
-            buckets["macro"].append(e)
-    return buckets
-
-
-def _fmt_event_list(events, max_items=5):
-    lines = []
-    seen = set()
-    for e in events[:max_items * 2]:
-        name = e.get("event", "").strip()
-        date_str = e.get("date", "")[:10]
-        if not name or name in seen:
-            continue
-        seen.add(name)
-        try:
-            dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-            label = dt.strftime("%a %b ") + str(dt.day)
-        except ValueError:
-            label = date_str
-        impact_tag = " \u2605" if e.get("impact", "") == "High" else ""
-        lines.append(f"{label}: {name}{impact_tag}")
-        if len(lines) >= max_items:
-            break
-    return " \u00b7 ".join(lines) if lines else ""
-
-
-def _fallback_cell(cell, ctx):
-    tnx, vix = ctx["tnx_close"], ctx["vix_close"]
-    bot1, top1 = ctx["bottom_sectors"].split(", ")[0], ctx["top_sectors"].split(", ")[0]
-    fallbacks = {
+    fallback = {
         "macro": (
-            f"Investors will monitor upcoming inflation and labor market prints for direction on "
-            f"the consumer backdrop. Given the 10-year at {tnx:.2f}%, any upside surprise in "
-            f"price data could reignite rate pressure on rate-sensitive names like those in {bot1}."
+            f"Investors will monitor upcoming inflation and labour market prints for direction on the "
+            f"consumer backdrop. Given the 10-year at {tnx:.2f}%, any upside surprise in price data "
+            f"could reignite rate pressure on rate-sensitive sectors like {bot1}."
         ),
-        "fed": (
-            f"The Fed remains data-dependent with yields at {tnx:.2f}%. Scheduled FOMC member "
-            f"speeches will be parsed for consensus on the rate path — any hawkish lean could "
-            f"trigger another leg of pressure on growth equities."
+        "fed_policy": (
+            f"The Fed remains data-dependent with yields at {tnx:.2f}%. Scheduled FOMC member speeches "
+            f"will be parsed for consensus on the rate path — any hawkish lean could trigger another "
+            f"leg of pressure on growth equities."
         ),
-        "earnings": (
+        "earnings_and_catalysts": (
             f"Earnings season continues with sector rotation firmly in focus. Reports from {top1} "
             f"constituents will be watched for guidance confirmation, while results from lagging "
             f"sectors will be scrutinised for signs of stabilisation."
         ),
-        "risk": (
-            ("The VIX at " + f"{vix:.2f}" + " signals elevated tail risk." if vix >= 20
+        "risk_factors": (
+            ("The VIX at " + f"{vix:.2f}" + " signals elevated tail risk heading into next week." if vix >= 20
              else "The VIX at " + f"{vix:.2f}" + " reflects relative market complacency.")
-            + " Geopolitical developments, surprise macro data, and Fed communication shifts "
-            "remain the primary exogenous risk factors heading into the new week."
+            + f" Geopolitical developments, surprise macro data, and Fed communication shifts "
+            "remain the primary exogenous risk factors."
         ),
     }
-    return fallbacks.get(cell, "")
 
-
-def generate_lookahead_fmp(market_context):
-    today = datetime.date.today()
-    days_until_monday = (7 - today.weekday()) % 7 or 7
-    next_monday = today + datetime.timedelta(days=days_until_monday)
-    next_friday = next_monday + datetime.timedelta(days=4)
-    from_str = next_monday.strftime("%Y-%m-%d")
-    to_str   = next_friday.strftime("%Y-%m-%d")
-    print(f"  Fetching FMP calendar: {from_str} to {to_str}")
-
-    events  = _fetch_fmp_calendar(from_str, to_str)
-    buckets = _categorise_events(events)
-    tnx     = market_context["tnx_close"]
-    tnx_pct = market_context["tnx_pct"]
-    vix     = market_context["vix_close"]
-    top1    = market_context["top_sectors"].split(", ")[0]
-    bot1    = market_context["bottom_sectors"].split(", ")[0]
-    sp_pct  = market_context["sp_pct"]
-
-    macro_events = _fmt_event_list(buckets["macro"])
-    if macro_events:
-        if tnx_pct > 0.03:
-            yield_ctx = f"rising yield environment ({tnx:.2f}%, +{abs(tnx_pct):.0f}bps WTD)"
-        elif tnx_pct < -0.03:
-            yield_ctx = f"easing yield backdrop ({tnx:.2f}%, {tnx_pct:.0f}bps WTD)"
-        else:
-            yield_ctx = f"stable rate backdrop ({tnx:.2f}%)"
-        macro = (
-            f"Key data on the calendar: {macro_events}. These releases land in a {yield_ctx}, "
-            f"meaning any upside surprise on inflation or labour data carries outsized repricing "
-            f"risk for rate-sensitive sectors like {bot1} that already underperformed this week."
-        )
-    else:
-        macro = _fallback_cell("macro", market_context)
-
-    fed_events = _fmt_event_list(buckets["fed"])
-    if fed_events:
-        if tnx > 4.25:
-            fed_tone = "restrictive territory — markets will parse every word for pivot signals"
-        elif tnx > 3.75:
-            fed_tone = "a data-dependent range — tone consistency across speakers will be key"
-        else:
-            fed_tone = "accommodative levels — any hawkish surprise could rapidly reprice risk"
-        fed = (
-            f"Fed calendar: {fed_events}. With the 10-year at {tnx:.2f}% — {fed_tone} — "
-            f"any divergence between hawkish regional presidents and a more measured Chair "
-            f"can move rate futures meaningfully and spill into equity sector rotation."
-        )
-    else:
-        fed = _fallback_cell("fed", market_context)
-
-    earn_events = _fmt_event_list(buckets["earnings"])
-    if earn_events:
-        earn = (
-            f"Earnings on deck: {earn_events}. Given this week's rotation into {top1} and out "
-            f"of {bot1}, guidance and forward commentary will matter more than backward-looking "
-            f"beats — investors will be looking for demand confirmation in the leading sectors "
-            f"and any green shoots of stabilisation in the laggards."
-        )
-    else:
-        earn = _fallback_cell("earnings", market_context)
-
-    risk_events = _fmt_event_list(buckets["risk"])
-    if vix >= 22:
-        vix_ctx = f"elevated VIX ({vix:.2f}) already flagging hedging demand"
-    elif vix >= 16:
-        vix_ctx = f"moderate VIX ({vix:.2f}) — complacency worth watching"
-    else:
-        vix_ctx = f"suppressed VIX ({vix:.2f}) — market structurally underhedged"
-
-    if risk_events:
-        momentum_phrase = "the existing bearish momentum" if sp_pct < 0 else "any reversal of this week's gains"
-        risk = (
-            f"Risk events to monitor: {risk_events}. Against a backdrop of {vix_ctx}, these "
-            f"scheduled catalysts have the potential to amplify {momentum_phrase} if they "
-            f"surprise in a hawkish or risk-off direction."
-        )
-    else:
-        risk = _fallback_cell("risk", market_context)
-
-    print("  Section 08 built from FMP economic calendar.")
-    return {
-        "macro": macro, "fed_policy": fed,
-        "earnings_and_catalysts": earn, "risk_factors": risk,
-    }
-
-
+    result = claude_json(
+        prompt,
+        required_keys={"macro", "fed_policy", "earnings_and_catalysts", "risk_factors"},
+        max_tokens=600,
+        fallback=fallback,
+    )
+    print("  Section 08 generated via Claude.")
+    return result
 # ─────────────────────────────────────────────
 # FORMATTING HELPERS
 # ─────────────────────────────────────────────
@@ -513,9 +389,9 @@ def generate_html():
           <span class="co-mv {c_color}">{c_arrow} {c_sign}{c_pct}%</span>
         </div>"""
 
-    # ── FMP: Section 08 ────────────────────────────────────────
-    print("Generating Section 08 from FMP economic calendar...")
-    lookahead = generate_lookahead_fmp({
+    # ── CLAUDE: Section 08 ───────────────────────────────────────
+    print("Generating Section 08 via Claude...")
+    lookahead = generate_lookahead_claude({
         "sp_pct":         sp_pct,
         "nd_pct":         nd["pct_change"],
         "vix_close":      vix_close,
@@ -879,7 +755,7 @@ def generate_html():
 
 <div class="footer">
   <div class="footer-txt">Automated Market Summary &middot; Post Market Close Edition</div>
-  <div class="footer-txt">Live Data via YFinance &amp; FMP &middot; AI Analysis via Claude &middot; {full_date}</div>
+  <div class="footer-txt">Live Data via YFinance &middot; AI Analysis via Claude &middot; {full_date}</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
