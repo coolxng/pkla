@@ -70,7 +70,9 @@
   .dc-note { font-size: 11px; color: var(--label); line-height: 1.45; }
   .co-row { display: flex; align-items: flex-start; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--border); }
   .co-row:last-child { border-bottom: none; }
-  .tkr { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; background: var(--surface2); border: 1px solid var(--border); padding: 4px 9px; min-width: 66px; text-align: center; flex-shrink: 0; margin-top: 1px; border-radius: 2px; color: #fff; }
+  .tkr-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+  .tkr-logo { width: 28px; height: 28px; border-radius: 6px; object-fit: contain; background: #fff; padding: 3px; }
+  .tkr { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; background: var(--surface2); border: 1px solid var(--border); padding: 4px 9px; min-width: 66px; text-align: center; flex-shrink: 0; border-radius: 2px; color: #fff; }
   .co-desc { font-size: 13.5px; color: #bcc3d6; line-height: 1.55; flex: 1; }
   .co-mv { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; flex-shrink: 0; margin-top: 2px; font-weight: 500; }
   .crypto-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; margin-bottom: 26px; }
@@ -155,13 +157,13 @@
     </div>
     <div class="t-item">
       <div class="t-name">Bitcoin</div>
-      <div class="t-val">$70,698</div>
-      <div class="t-chg neg">▼ -5.56% WTD</div>
+      <div class="t-val">$70,592</div>
+      <div class="t-chg neg">▼ -5.7% WTD</div>
     </div>
     <div class="t-item">
       <div class="t-name">Ethereum</div>
-      <div class="t-val">$2,151</div>
-      <div class="t-chg neg">▼ -8.5% WTD</div>
+      <div class="t-val">$2,150</div>
+      <div class="t-chg neg">▼ -8.56% WTD</div>
     </div>
     <div class="t-item">
       <div class="t-name">10-Yr Yield</div>
@@ -205,13 +207,13 @@
     </div>
     <div class="t-item">
       <div class="t-name">Bitcoin</div>
-      <div class="t-val">$70,698</div>
-      <div class="t-chg neg">▼ -5.56% WTD</div>
+      <div class="t-val">$70,592</div>
+      <div class="t-chg neg">▼ -5.7% WTD</div>
     </div>
     <div class="t-item">
       <div class="t-name">Ethereum</div>
-      <div class="t-val">$2,151</div>
-      <div class="t-chg neg">▼ -8.5% WTD</div>
+      <div class="t-val">$2,150</div>
+      <div class="t-chg neg">▼ -8.56% WTD</div>
     </div>
     <div class="t-item">
       <div class="t-name">10-Yr Yield</div>
@@ -258,16 +260,16 @@
         <div class="col-lbl lead">&#9650; Top Performing Sectors</div>
         <div class="tag-row"><span class="tag g">Energy (XLE) (+2.79%)</span><span class="tag g">Financials (XLF) (+0.39%)</span><span class="tag g">Technology (XLK) (-1.1%)</span><span class="tag g">Industrials (XLI) (-1.81%)</span></div>
         <ul class="blist">
-          <li>Energy (XLE) surged 2.79% as crude oil prices rebounded amid geopolitical supply concerns, driving outperformance across integrated and upstream operators.</li>
-          <li>Financials (XLF) posted modest gains of 0.39% as regional banks stabilized following the week's equity volatility, though rate-sensitive mortgage demand remained pressured.</li>
+          <li>Energy (XLE) surged +2.79% as crude prices stabilized amid geopolitical supply concerns and improved demand outlook.</li>
+          <li>Financials (XLF) posted a modest +0.39% gain as higher rates supported net interest margins despite recession headwinds.</li>
         </ul>
       </div>
       <div>
         <div class="col-lbl lag">&#9660; Lagging Sectors</div>
         <div class="tag-row"><span class="tag r">Real Estate (XLRE) (-3.93%)</span><span class="tag r">Cons. Staples (XLP) (-4.07%)</span><span class="tag r">Materials (XLB) (-4.49%)</span><span class="tag r">Utilities (XLU) (-4.92%)</span></div>
         <ul class="blist">
-          <li>Utilities (XLU) collapsed 4.92%, the week's worst performer, as rising 10-year yields to 4.39% undercut the appeal of dividend-yielding defensive stocks amid elevated VIX levels.</li>
-          <li>Materials (XLB) tumbled 4.49% as industrial metals weakness and cyclical headwinds intensified concerns about slowing global manufacturing demand in the face of broader market selloff.</li>
+          <li>Utilities (XLU) plummeted -4.92% as rising 10-year yields to 4.39% made defensive dividend yields less attractive relative to risk-free rates.</li>
+          <li>Materials (XLB) fell -4.49% as declining industrial commodities reflected weakening global economic growth expectations and reduced construction activity.</li>
         </ul>
       </div>
     </div>
@@ -300,28 +302,43 @@
     <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
     <div style="margin-bottom:20px;">
         <div class="co-row">
-          <span class="tkr">AAPL</span>
-          <div class="co-desc"><strong>Apple</strong> Relative resilience at $247.99 (-0.85%) suggests defensive positioning in mega-cap tech amid broader sector selloff, though the magnitude underperformance versus the index remains modest.</div>
+          <div class="tkr-wrap">
+            <img src="https://logo.clearbit.com/apple.com" class="tkr-logo" alt="AAPL" onerror="this.style.display='none'">
+            <span class="tkr">AAPL</span>
+          </div>
+          <div class="co-desc"><strong>Apple</strong> Relative resilience at $247.99 with only an 85-basis-point decline suggests investors view Apple as a defensive positioning within the tech selloff, despite broader sector weakness.</div>
           <span class="co-mv neg">▼ -0.85%</span>
         </div>
         <div class="co-row">
-          <span class="tkr">MSFT</span>
-          <div class="co-desc"><strong>Microsoft</strong> Decline to $381.87 (-3.46%) signals investor caution toward cloud and AI infrastructure plays despite recent earnings strength, indicating rotation away from growth narratives.</div>
+          <div class="tkr-wrap">
+            <img src="https://logo.clearbit.com/microsoft.com" class="tkr-logo" alt="MSFT" onerror="this.style.display='none'">
+            <span class="tkr">MSFT</span>
+          </div>
+          <div class="co-desc"><strong>Microsoft</strong> A 3.46% plunge to $381.87 indicates heightened sensitivity to rising rates and AI valuation concerns, signaling that even mega-cap cloud infrastructure faces margin compression risks.</div>
           <span class="co-mv neg">▼ -3.46%</span>
         </div>
         <div class="co-row">
-          <span class="tkr">NVDA</span>
-          <div class="co-desc"><strong>Nvidia</strong> Steepest loss in the cohort at $172.70 (-4.19%) reflects concern that AI capex cycles may be moderating, with semiconductor exposure particularly vulnerable to duration-driven equity repricing.</div>
+          <div class="tkr-wrap">
+            <img src="https://logo.clearbit.com/nvidia.com" class="tkr-logo" alt="NVDA" onerror="this.style.display='none'">
+            <span class="tkr">NVDA</span>
+          </div>
+          <div class="co-desc"><strong>Nvidia</strong> Falling 4.19% to $172.70 reflects profit-taking in AI hardware leadership amid elevated volatility, potentially flagging rotation away from single-point-of-failure semiconductor exposure.</div>
           <span class="co-mv neg">▼ -4.19%</span>
         </div>
         <div class="co-row">
-          <span class="tkr">AMZN</span>
-          <div class="co-desc"><strong>Amazon</strong> Held ground better at $205.37 (-1.11%) than software peers, suggesting e-commerce and AWS operational stability provide anchorage when risk sentiment deteriorates.</div>
+          <div class="tkr-wrap">
+            <img src="https://logo.clearbit.com/amazon.com" class="tkr-logo" alt="AMZN" onerror="this.style.display='none'">
+            <span class="tkr">AMZN</span>
+          </div>
+          <div class="co-desc"><strong>Amazon</strong> Trading down just 1.11% to $205.37 demonstrates AWS recurring revenue stability insulating the e-commerce giant from broader technology multiple compression.</div>
           <span class="co-mv neg">▼ -1.11%</span>
         </div>
         <div class="co-row">
-          <span class="tkr">META</span>
-          <div class="co-desc"><strong>Meta Platforms</strong> Pullback to $593.66 (-3.18%) demonstrates that even strong ad-market demand and AI investment narratives cannot insulate digital platforms from macro derating pressure at elevated valuations.</div>
+          <div class="tkr-wrap">
+            <img src="https://logo.clearbit.com/meta.com" class="tkr-logo" alt="META" onerror="this.style.display='none'">
+            <span class="tkr">META</span>
+          </div>
+          <div class="co-desc"><strong>Meta Platforms</strong> A 3.18% retreat to $593.66 signals investor caution around ad-market cyclicality as recession fears resurface, despite the company's recent capital discipline narrative.</div>
           <span class="co-mv neg">▼ -3.18%</span>
         </div></div>
   </div>
@@ -332,23 +349,23 @@
     <div class="crypto-grid">
       <div class="cc">
         <div class="cc-name">Bitcoin (BTC)</div>
-        <div class="cc-price">$70,698</div>
-        <div class="cc-chg neg">&#9660; 5.56% WTD</div>
+        <div class="cc-price">$70,592</div>
+        <div class="cc-chg neg">&#9660; 5.7% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Ethereum (ETH)</div>
-        <div class="cc-price">$2,151</div>
-        <div class="cc-chg neg">&#9660; 8.5% WTD</div>
+        <div class="cc-price">$2,150</div>
+        <div class="cc-chg neg">&#9660; 8.56% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">Solana (SOL)</div>
-        <div class="cc-price">$90.08</div>
-        <div class="cc-chg neg">&#9660; 6.38% WTD</div>
+        <div class="cc-price">$90.00</div>
+        <div class="cc-chg neg">&#9660; 6.47% WTD</div>
       </div>
       <div class="cc">
         <div class="cc-name">XRP</div>
-        <div class="cc-price">$1.4500</div>
-        <div class="cc-chg neg">&#9660; 6.06% WTD</div>
+        <div class="cc-price">$1.4400</div>
+        <div class="cc-chg neg">&#9660; 6.71% WTD</div>
       </div>
     </div>
   </div>
@@ -362,12 +379,12 @@
         <tr>
           <td>Nikkei 225 (Japan)</td>
           <td class="neg">-1.98%</td>
-          <td>Japanese equities retreated nearly 2% as the yen's strength and retreat from risk assets weighed on exporters amid broader global equity weakness.</td>
+          <td>Japanese equities retreated 1.98% as yen strength and profit-taking offset modest economic data, with exporters facing headwinds from currency appreciation.</td>
         </tr>
         <tr>
           <td>Euro Stoxx 50 (EU)</td>
           <td class="neg">-3.77%</td>
-          <td>European blue chips suffered the week's steepest losses at -3.77%, amplifying concerns over eurozone economic resilience as rate-sensitive sectors faced renewed pressure.</td>
+          <td>European stocks suffered their steepest weekly decline in months, dropping 3.77% as recession concerns and persistent inflation pressures weighed on the continent's largest companies.</td>
         </tr>
       </tbody>
     </table>
@@ -376,7 +393,7 @@
   <div class="section">
     <div class="sec-label">Section 07</div>
     <div class="sec-title">Investor Takeaway</div>
-    <div class="takeaway">The week's -1.9% S&P decline masked a significant regime shift: a 245-basis-point surge in the 10-year yield triggered a brutal repricing away from rate-sensitive assets, with utilities down 4.92%, real estate off 3.93%, and gold collapsing 10.05%, while energy rallied 2.79% on crude's 4.91% climb as inflation expectations reasserted themselves. The selloff was broad-based and international—the Euro Stoxx 50 fell 3.77% and Nikkei 225 dropped 1.98%—suggesting this was not a U.S.-specific rotation but rather a genuine risk-off capitulation that caught growth and defensive names alike, with technology down 1.1% despite Nasdaq's relative outperformance. The VIX's modest 1.51% decline despite equity weakness and the dollar's flat performance indicate that volatility compression is masking underlying policy anxiety, leaving equity valuations vulnerable until the Fed's forward guidance stabilizes rate expectations.</div>
+    <div class="takeaway">Equity markets sold off across the board this week amid a sharp repricing of rate expectations, with the S&P 500, Nasdaq, and Dow declining 1.9–2.1% as the 10-year yield surged 245 basis points to 4.39%, punishing duration-sensitive sectors like Utilities (–4.92%), Consumer Staples (–4.07%), and Real Estate (–3.93%) while Energy gained 2.79% on crude's 4.91% rally to $98.09. The rotation was decidedly defensive-to-commodities, reflected in gold's 10% plunge—a rare capitulation signal—coupled with Bitcoin's 5.7% decline and a VIX that barely budged despite equity weakness, suggesting institutional positioning remains rigid rather than panicked. International weakness was more pronounced, with the Euro Stoxx 50 down 3.77% and the Nikkei 225 off 1.98%, indicating the yield shock has global traction and may signal a sustained regime shift toward higher-for-longer rates rather than a transient correction.</div>
   </div>
 
   <div class="section">
@@ -385,19 +402,19 @@
     <div class="ahead-grid" style="margin-bottom:24px;">
       <div class="ahead-cell">
         <div class="ahead-day">Macro &amp; Economic Data</div>
-        <div class="ahead-ev">The 10-year yield's sharp 245 basis point weekly surge to 4.39% signals renewed inflation concerns and has created a challenging backdrop for equities, evidenced by the S&P 500's 1.9% decline. The dollar's relative stability (DXY -0.21%) despite rising rates suggests persistent safe-haven demand, while crude's 4.91% gain reflects supply tightness that could keep inflation pressures sticky—a headwind for consumer-focused sectors like Staples, which fell sharply this week.</div>
+        <div class="ahead-ev">The 245 basis point surge in 10-year yields this week, coupled with a -1.9% S&P decline, signals growing concern about persistent inflation and higher-for-longer rates. Gold's sharp 10% drawdown reflects the rising real rate environment, while crude's +4.91% gain suggests markets are pricing in supply tightness despite economic headwinds. The dollar's modest -0.21% WTD decline masks an underlying bid from higher yields, which should continue supporting USD strength next week as Treasury yields stabilize around the 4.40% level.</div>
       </div>
       <div class="ahead-cell">
         <div class="ahead-day">Federal Reserve Policy</div>
-        <div class="ahead-ev">With the 10-year now pricing in sustained higher-for-longer rate expectations, markets appear to be repricing the probability of near-term Fed cuts, which could weigh on growth-sensitive equities into next week. The VIX's elevation to 26.78 indicates options markets are pricing meaningful tail risk, likely contingent on whether Fed speakers validate the market's hawkish repricing or attempt to manage expectations.</div>
+        <div class="ahead-ev">The sharp yield move this week appears driven by inflation data or Fed forward guidance rather than immediate policy action, but markets will scrutinize any comments from Fed speakers next week for clues on terminal rates and 2024 hold duration. With the 10-year having rallied 245 bps WTD, the market may be front-running another rate hike or signaling that the Fed has lost credibility on the pause narrative. Expect volatility (VIX at 26.78) to persist until the Fed clarifies the inflation trajectory and its tolerance for current yield levels.</div>
       </div>
       <div class="ahead-cell">
         <div class="ahead-day">Earnings &amp; Catalysts</div>
-        <div class="ahead-ev">Energy and Financials outperformance (top two sectors) reflects the bullish setup from higher rates and oil prices, though this creates a two-speed market where rate-sensitive sectors like Real Estate lag significantly. Earnings season momentum could be tested if the 10-year yield remains elevated, compressing multiples even for beat-and-raise companies.</div>
+        <div class="ahead-ev">Energy and Financials' outperformance this week—driven by the yield surge and crude strength—should continue into earnings season if Q3 results validate higher rate benefits for banks and higher commodity prices for energy majors. Real Estate and Consumer Staples weakness reflects the yield shock's immediate headwind on low-duration, low-beta names; next week's earnings from REIT and staple names will be critical to determining if valuations can recover or if duration risk persists. Watch for any guidance cuts from rate-sensitive sectors that signal demand destruction from the recent tightening repricing.</div>
       </div>
       <div class="ahead-cell">
         <div class="ahead-day">Key Risk Factors</div>
-        <div class="ahead-ev">The concurrent weakness in both Bitcoin (-5.56%) and Gold (-10.05%) suggests risk-off sentiment is trumping inflation hedges, a potential sign that growth fears are outweighing commodity strength—watch for earnings revisions next week to confirm whether the market's repricing is justified or overdone. A break below 4.30% on the 10-year could spark a sharp mean-reversion rally, while yields sustaining above 4.40% may accelerate the rotation out of defensive sectors.</div>
+        <div class="ahead-ev">A VIX still elevated at 26.78 signals tail risks remain priced in; if yields spike another 50+ bps next week on hawkish data, a 3-5% S&P correction is plausible given the -1.9% loss already posted. Conversely, a reversal in the 10-year (back toward 4.20%) could trigger sharp relief buying in beaten-down duration plays like XLRE and XLP, creating a two-way market. Crypto weakness (-5.7% BTC) reflects risk-off sentiment and rate sensitivity; further Fed hawkishness could push BTC toward $25k support.</div>
       </div>
     </div>
   </div>
