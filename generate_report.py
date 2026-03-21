@@ -353,6 +353,7 @@ def generate_html():
         "You are writing copy for a weekly institutional equity market summary. "
         "Write one sentence per ticker describing its weekly performance and what it signals "
         "for the broader market or its sector. Each sentence must be distinct — do not reuse phrasing. "
+        "IMPORTANT: Do NOT start the sentence with the company name or ticker — the name is already displayed separately. Start with the action or insight directly. "
         "Be specific and analytical. Reference the actual closing price and move. "
         "Respond ONLY with a JSON object mapping ticker symbol to sentence string. No markdown.\n\n"
         f"Market context: S&P 500 {'+' if sp_pct >= 0 else ''}{sp_pct}% WTD, "
