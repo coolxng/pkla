@@ -2,8 +2,8 @@ name: Generate Weekly Market Summary
 
 on:
   schedule:
-    # Runs at 21:00 UTC every Friday (3:00PM CST / 4:00PM EST)
-    - cron: '0 21 * * 5'
+    # Runs at 22:00 UTC every Friday (4:00PM CST / 1 hour after market close)
+    - cron: '0 22 * * 5'
 
   # Allows manual trigger from the Actions tab
   workflow_dispatch:
