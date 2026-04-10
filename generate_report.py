@@ -12,7 +12,7 @@ import urllib.request
 # Repo → Settings → Secrets → Actions → New repository secret
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-ANTHROPIC_MODEL   = "claude-haiku-4-5"
+ANTHROPIC_MODEL   = "claude-sonnet-4-6"
 
 # Sanity-check bounds for commodity prices (to catch stale/bad yfinance data)
 SANITY_BOUNDS = {
