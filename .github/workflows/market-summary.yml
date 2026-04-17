@@ -2,8 +2,9 @@ name: Generate Weekly Market Summary
 
 on:
   schedule:
-    # Runs at 21:00 UTC every Friday (4:00PM CDT / 1 hour after market close)
-    - cron: '0 21 * * 5'
+    # Runs at 20:40 UTC every Friday (3:40PM CDT / 40 min after market close)
+    # Earlier fire time gives buffer for GitHub Actions scheduling delays
+    - cron: '40 20 * * 5'
 
   # Allows manual trigger from the Actions tab
   workflow_dispatch:
