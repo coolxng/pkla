@@ -329,7 +329,15 @@ def generate_html():
     }
     mc_descriptions = claude_json(mc_prompt, required_keys=set(megacap_data.keys()), max_tokens=500, fallback=mc_fallback)
 
-    logo_domains = {"AAPL": "apple.com", "MSFT": "microsoft.com", "NVDA": "nvidia.com", "AMZN": "amazon.com", "META": "meta.com"}
+    # TradingView stock logos
+    # Pattern: https://s3-symbol-logo.tradingview.com/{slug}.svg
+    logo_slugs = {
+        "AAPL": "apple",
+        "MSFT": "microsoft",
+        "NVDA": "nvidia",
+        "AMZN": "amazon",
+        "META": "meta-platforms",
+    }
     megacap_html = ""
     for tk, v in megacap_data.items():
         r       = v["result"]
@@ -340,8 +348,8 @@ def generate_html():
         c_sign  = "+" if c_pct >= 0 else ""
         err_note= f' <span style="color:var(--red);font-size:10px;">data error</span>' if r["error"] else ""
         desc    = mc_descriptions.get(tk, mc_fallback.get(tk, ""))
-        domain  = logo_domains.get(tk, "")
-        logo_html = f'<img src="https://logo.clearbit.com/{domain}" class="tkr-logo" alt="{tk} logo" onerror="this.style.display=\'none\'">' if domain else ""
+        slug    = logo_slugs.get(tk, "")
+        logo_html = f'<img src="https://s3-symbol-logo.tradingview.com/{slug}.svg" class="tkr-logo" alt="{tk} logo" onerror="this.style.display=\'none\'">' if slug else ""
         megacap_html += (
             f'<div class="co-row">'
             f'<div class="tkr-wrap">{logo_html}<span class="tkr">{tk}</span></div>'
@@ -1017,12 +1025,12 @@ def generate_html():
   }}
 
   .tkr-logo {{
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     object-fit: contain;
-    background: #fff;
-    padding: 4px;
+    background: var(--surface2);
+    padding: 5px;
     box-shadow: 0 4px 12px -4px rgba(0,0,0,0.2);
   }}
 
