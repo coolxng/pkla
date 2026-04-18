@@ -647,150 +647,6 @@
     font-weight: 700;
   }
 
-  .ai-panel {
-    background: linear-gradient(180deg, rgba(0,240,255,0.06), rgba(17,17,24,1));
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 28px;
-    box-shadow: var(--shadow-glow);
-  }
-
-  .light .ai-panel {
-    background: linear-gradient(180deg, rgba(0,170,255,0.05), rgba(255,255,255,1));
-  }
-
-  .ai-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 18px;
-  }
-
-  .ai-kicker {
-    font-size: 10px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 700;
-    margin-bottom: 6px;
-  }
-
-  .ai-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-
-  .ai-sub {
-    font-size: 14px;
-    color: var(--label);
-    max-width: 75ch;
-    line-height: 1.6;
-  }
-
-  .ai-grid {
-    display: grid;
-    grid-template-columns: 1.25fr 0.85fr;
-    gap: 16px;
-  }
-
-  .ai-box {
-    background: rgba(26,26,34,0.72);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 18px;
-  }
-
-  .light .ai-box { background: rgba(241,243,248,0.9); }
-
-  .ai-textarea {
-    width: 100%;
-    background: var(--surface3);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 14px;
-    border-radius: 14px;
-    font: 500 13px/1.6 'Inter', system-ui, sans-serif;
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    min-height: 150px;
-    resize: vertical;
-  }
-
-  .ai-textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(0,240,255,0.08);
-  }
-
-  .ai-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 14px;
-  }
-
-  .ai-btn {
-    appearance: none;
-    border: none;
-    cursor: pointer;
-    padding: 11px 16px;
-    border-radius: 999px;
-    font: 700 11px 'Space Grotesk', sans-serif;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
-  }
-
-  .ai-btn:hover { transform: translateY(-1px); }
-
-  .ai-btn.primary {
-    background: linear-gradient(90deg, var(--accent), #3ecbff);
-    color: #051018;
-  }
-
-  .light .ai-btn.primary { color: #fff; }
-
-  .ai-btn.secondary {
-    background: var(--surface3);
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-
-  .ai-output {
-    min-height: 260px;
-    white-space: pre-wrap;
-    font-size: 13.5px;
-    color: var(--text);
-    line-height: 1.7;
-  }
-
-  .ai-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .ai-list button {
-    width: 100%;
-    text-align: left;
-    background: var(--surface3);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 13px 14px;
-    border-radius: 14px;
-    cursor: pointer;
-    font: 500 13px/1.5 'Inter', system-ui, sans-serif;
-    transition: all 0.2s ease;
-  }
-
-  .ai-list button:hover {
-    border-color: var(--accent);
-    box-shadow: 0 10px 24px -18px rgba(0,240,255,0.5);
-  }
-
   .footer {
     border-top: 1px solid var(--border);
     padding: 32px 60px;
@@ -804,7 +660,6 @@
   }
 
   @media (max-width: 980px) {
-    .ai-grid,
     .two-col,
     .ahead-grid {
       grid-template-columns: 1fr;
@@ -826,8 +681,7 @@
     }
 
     .masthead-row,
-    .chart-hdr,
-    .ai-head {
+    .chart-hdr {
       align-items: flex-start;
     }
 
@@ -1016,51 +870,12 @@
       <canvas id="spxChart" height="220"></canvas>
     </div>
   </div>
-
-  <div class="section">
-    <div class="sec-label">SECTION 10</div>
-    <div class="sec-title">AI Market Desk</div>
-    <div class="ai-panel">
-      <div class="ai-head">
-        <div>
-          <div class="ai-kicker">AI Features</div>
-          <div class="ai-title">Ask AI about this market summary</div>
-          <div class="ai-sub">Ask a question about the week's market action and generate a fresh analysis from the data on this page.</div>
-        </div>
-      </div>
-
-      <div class="ai-grid">
-        <div class="ai-box">
-          <div class="dc-lbl" style="margin-bottom:8px;">Ask a question</div>
-          <textarea id="aiPrompt" class="ai-textarea" placeholder="Example: What are the biggest risks to the current rally next week, and which sections of this report support that view?"></textarea>
-
-          <div class="ai-actions">
-            <button class="ai-btn primary" id="runAiBtn" type="button">Run analysis</button>
-            <button class="ai-btn secondary" id="clearAiBtn" type="button">Clear</button>
-          </div>
-        </div>
-
-        <div class="ai-box">
-          <div class="dc-lbl" style="margin-bottom:10px;">Quick prompts</div>
-          <ul class="ai-list" style="margin-bottom:14px;">
-            <li><button type="button" data-prompt="Summarize the strongest bullish signals in this report and explain whether they are durable.">Summarize the strongest bullish signals</button></li>
-            <li><button type="button" data-prompt="What are the biggest risks to this rally next week based on the data in this report?">Identify the biggest risks next week</button></li>
-            <li><button type="button" data-prompt="Compare what equities, bonds, oil, gold, and crypto are signaling together this week.">Compare cross-asset signals</button></li>
-            <li><button type="button" data-prompt="Turn this market summary into a concise morning note for a trader.">Convert this into a trader morning note</button></li>
-          </ul>
-
-          <div class="dc-lbl" style="margin-bottom:10px;">AI Output</div>
-          <div id="aiOutput" class="ai-output">Your answer will appear here.</div>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <div class="footer">
   <div>Automated Weekly Market Summary • Post-Market Close Edition</div>
   <div>Live Data via yfinance • Perplexity Analysis • April 18, 2026</div>
-  <div>Revamped Theme • Light/Dark Mode • AI Ask Panel</div>
+  <div>Revamped Theme • Light/Dark Mode</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -1152,97 +967,6 @@
   }
 
   renderChart();
-
-  const promptEl = document.getElementById('aiPrompt');
-  const outputEl = document.getElementById('aiOutput');
-  const runBtn = document.getElementById('runAiBtn');
-  const clearBtn = document.getElementById('clearAiBtn');
-
-  const PPLX_API_KEY = 'YOUR_API_KEY_HERE';
-
-  document.querySelectorAll('[data-prompt]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      promptEl.value = btn.dataset.prompt;
-      promptEl.focus();
-    });
-  });
-
-  clearBtn.addEventListener('click', () => {
-    promptEl.value = '';
-    outputEl.textContent = 'Your answer will appear here.';
-  });
-
-  function buildMarketContext() {
-    return `
-Weekly Market Summary Context:
-- S&P 500: 7,126.06, +4.54% WTD
-- Nasdaq Composite: 24,468.48, +6.84% WTD
-- Dow Jones Industrial Average: 49,447.43, +1,530 pts WTD
-- Russell 2000: 2,776.90, +5.56% WTD
-- Crude Oil: $84.00, -13.02% WTD
-- Gold: $4,849.40, +1.84% WTD
-- VIX: 17.48, -9.1% WTD
-- Bitcoin: $77,449, +9.46% WTD
-- Ethereum: $2,430, +10.85% WTD
-- 10-Yr Treasury Yield: 4.25%, down 7 bps WTD
-- DXY: 98.23
-- Top sectors: Technology +8.22%, Consumer Discretionary +6.66%, Communication Services +4.52%, Real Estate +3.88%
-- Lagging sectors: Consumer Staples +0.11%, Materials -0.15%, Utilities -1.7%, Energy -3.37%
-    `.trim();
-  }
-
-  async function runPerplexityAnalysis() {
-    const prompt = promptEl.value.trim();
-
-    if (!prompt) {
-      outputEl.textContent = 'Enter a question first.';
-      return;
-    }
-
-    if (!PPLX_API_KEY || PPLX_API_KEY === 'YOUR_API_KEY_HERE') {
-      outputEl.textContent = 'Set your API key in the script before using Run analysis.';
-      return;
-    }
-
-    outputEl.textContent = 'Running analysis...';
-
-    try {
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${PPLX_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'sonar',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a sharp macro and markets analyst. Use the supplied market summary data only. Be concise, high-signal, and structured in short paragraphs.'
-            },
-            {
-              role: 'user',
-              content: `${buildMarketContext()}\n\nQuestion:\n${prompt}`
-            }
-          ],
-          temperature: 0.2
-        })
-      });
-
-      if (!response.ok) {
-        const err = await response.text();
-        outputEl.textContent = `Request failed: ${response.status}\n\n${err}`;
-        return;
-      }
-
-      const data = await response.json();
-      outputEl.textContent = data?.choices?.[0]?.message?.content || 'No response returned.';
-    } catch (error) {
-      outputEl.textContent = `Error: ${error.message}`;
-    }
-  }
-
-  runBtn.addEventListener('click', runPerplexityAnalysis);
 </script>
 </body>
 </html>
