@@ -19,6 +19,8 @@
     --text: #f0f4ff;
     --muted: #8a8fa8;
     --label: #a0a8c0;
+    --nav-bg: rgba(10, 10, 15, 0.92);
+    --title-color: #ffffff;
     --shadow-dark: 0 18px 40px -16px rgba(0, 0, 0, 0.45);
     --shadow-glow: 0 18px 38px -16px rgba(0, 240, 255, 0.22);
   }
@@ -36,6 +38,8 @@
     --text: #1a1f2e;
     --muted: #64748b;
     --label: #475569;
+    --nav-bg: rgba(248, 249, 252, 0.92);
+    --title-color: #1a1f2e;
     --shadow-dark: 0 16px 34px -18px rgba(0, 0, 0, 0.14);
     --shadow-glow: 0 18px 34px -18px rgba(0, 170, 255, 0.16);
   }
@@ -83,7 +87,7 @@
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: rgba(10, 10, 15, 0.92);
+    background: var(--nav-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
@@ -130,7 +134,8 @@
   .week-title {
     font-size: clamp(28px, 4vw, 48px);
     line-height: 1.05;
-    color: #fff;
+    color: var(--title-color);
+    transition: color 0.3s ease;
   }
 
   .week-title span { color: var(--accent); }
@@ -201,16 +206,17 @@
   }
 
   .ticker-track {
-    display: inline-flex;
-    animation: scrollTicker 40s linear infinite;
-    white-space: nowrap;
+    display: flex;
+    width: max-content;
+    animation: scrollTicker 60s linear infinite;
+    will-change: transform;
   }
 
   .ticker-track:hover { animation-play-state: paused; }
 
   @keyframes scrollTicker {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
   }
 
   @keyframes pulse {
@@ -223,7 +229,7 @@
     flex-direction: column;
     gap: 3px;
     padding: 14px 32px;
-    min-width: max-content;
+    flex-shrink: 0;
     border-right: 1px solid var(--border);
   }
 
@@ -281,6 +287,14 @@
     font-weight: 600;
     letter-spacing: -0.02em;
     margin-bottom: 24px;
+  }
+
+  .sec-intro {
+    font-size: 14px;
+    color: var(--label);
+    line-height: 1.65;
+    margin-bottom: 24px;
+    max-width: 820px;
   }
 
   .idx-grid {
@@ -468,7 +482,7 @@
     display: flex;
     align-items: flex-start;
     gap: 18px;
-    padding: 20px 0;
+    padding: 22px 0;
     border-bottom: 1px solid var(--border);
   }
 
@@ -483,8 +497,8 @@
   }
 
   .tkr-logo {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 8px;
     object-fit: contain;
     background: #fff;
@@ -504,17 +518,51 @@
     text-align: center;
   }
 
-  .co-desc {
+  .co-body {
     flex: 1;
+    min-width: 0;
+  }
+
+  .co-desc {
     font-size: 14.5px;
     line-height: 1.65;
     color: var(--text);
+    margin-bottom: 10px;
   }
 
   .co-desc strong { font-weight: 700; }
 
+  .co-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    font-size: 12px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .co-stat {
+    display: inline-flex;
+    gap: 6px;
+    align-items: baseline;
+  }
+
+  .co-stat-lbl {
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .co-stat-val {
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
   .co-mv {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     margin-top: 4px;
     white-space: nowrap;
@@ -522,8 +570,8 @@
 
   .crypto-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
     margin-bottom: 32px;
   }
 
@@ -532,15 +580,33 @@
     padding: 24px;
     border-radius: 16px;
     box-shadow: var(--shadow-dark);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cc-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cc-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: var(--surface2);
+    padding: 3px;
+    flex-shrink: 0;
   }
 
   .cc-name {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.12em;
     color: var(--muted);
     text-transform: uppercase;
     font-weight: 700;
-    margin-bottom: 8px;
   }
 
   .cc-price {
@@ -548,12 +614,41 @@
     font-size: 28px;
     font-weight: 700;
     line-height: 1;
-    margin-bottom: 10px;
   }
 
   .cc-chg {
     font-size: 13px;
     font-weight: 700;
+  }
+
+  .cc-range {
+    font-size: 11.5px;
+    color: var(--label);
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .cc-range-lbl {
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .cc-range-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .cc-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--label);
   }
 
   .table-wrap {
@@ -591,7 +686,8 @@
 
   .gtable tr:last-child td { border-bottom: none; }
   .gtable td:first-child { font-weight: 700; white-space: nowrap; }
-  .gtable td:nth-child(2) { font-weight: 700; width: 140px; }
+  .gtable td:nth-child(2) { font-weight: 700; width: 120px; font-family: 'Space Grotesk', sans-serif; }
+  .gtable td:nth-child(3) { font-weight: 700; width: 100px; }
 
   .takeaway {
     background: var(--surface);
@@ -704,7 +800,7 @@
       </div>
     </div>
   </div>
-  <div class="ticker-wrapper"><div class="ticker-track"><div class="t-item"><div class="t-name">S&P 500</div><div class="t-val">7,126.06</div><div class="t-chg pos">▲ +4.54% WTD</div></div><div class="t-item"><div class="t-name">Nasdaq</div><div class="t-val">24,468.48</div><div class="t-chg pos">▲ +6.84% WTD</div></div><div class="t-item"><div class="t-name">DJIA</div><div class="t-val">49,447.43</div><div class="t-chg pos">▲ +1,530 pts WTD</div></div><div class="t-item"><div class="t-name">Russell 2000</div><div class="t-val">2,776.90</div><div class="t-chg pos">▲ +5.56% WTD</div></div><div class="t-item"><div class="t-name">Crude Oil</div><div class="t-val">$83.85</div><div class="t-chg neg">▼ -13.17% WTD</div></div><div class="t-item"><div class="t-name">Gold</div><div class="t-val">$4,857.60</div><div class="t-chg pos">▲ +2.01% WTD</div></div><div class="t-item"><div class="t-name">VIX</div><div class="t-val">17.48</div><div class="t-chg neg">▼ -9.1% WTD</div></div><div class="t-item"><div class="t-name">Bitcoin</div><div class="t-val">$75,827</div><div class="t-chg pos">▲ +1.8% WTD</div></div><div class="t-item"><div class="t-name">Ethereum</div><div class="t-val">$2,357</div><div class="t-chg neg">▼ -0.59% WTD</div></div><div class="t-item"><div class="t-name">10-Yr Yield</div><div class="t-val">4.25%</div><div class="t-chg neg">▼ 7 bps WTD</div></div><div class="t-item"><div class="t-name">S&P 500</div><div class="t-val">7,126.06</div><div class="t-chg pos">▲ +4.54% WTD</div></div><div class="t-item"><div class="t-name">Nasdaq</div><div class="t-val">24,468.48</div><div class="t-chg pos">▲ +6.84% WTD</div></div><div class="t-item"><div class="t-name">DJIA</div><div class="t-val">49,447.43</div><div class="t-chg pos">▲ +1,530 pts WTD</div></div><div class="t-item"><div class="t-name">Russell 2000</div><div class="t-val">2,776.90</div><div class="t-chg pos">▲ +5.56% WTD</div></div><div class="t-item"><div class="t-name">Crude Oil</div><div class="t-val">$83.85</div><div class="t-chg neg">▼ -13.17% WTD</div></div><div class="t-item"><div class="t-name">Gold</div><div class="t-val">$4,857.60</div><div class="t-chg pos">▲ +2.01% WTD</div></div><div class="t-item"><div class="t-name">VIX</div><div class="t-val">17.48</div><div class="t-chg neg">▼ -9.1% WTD</div></div><div class="t-item"><div class="t-name">Bitcoin</div><div class="t-val">$75,827</div><div class="t-chg pos">▲ +1.8% WTD</div></div><div class="t-item"><div class="t-name">Ethereum</div><div class="t-val">$2,357</div><div class="t-chg neg">▼ -0.59% WTD</div></div><div class="t-item"><div class="t-name">10-Yr Yield</div><div class="t-val">4.25%</div><div class="t-chg neg">▼ 7 bps WTD</div></div></div></div>
+  <div class="ticker-wrapper"><div class="ticker-track"><div class="t-item"><div class="t-name">S&P 500</div><div class="t-val">7,126.06</div><div class="t-chg pos">▲ +4.54% WTD</div></div><div class="t-item"><div class="t-name">Nasdaq</div><div class="t-val">24,468.48</div><div class="t-chg pos">▲ +6.84% WTD</div></div><div class="t-item"><div class="t-name">DJIA</div><div class="t-val">49,447.43</div><div class="t-chg pos">▲ +1,530 pts WTD</div></div><div class="t-item"><div class="t-name">Russell 2000</div><div class="t-val">2,776.90</div><div class="t-chg pos">▲ +5.56% WTD</div></div><div class="t-item"><div class="t-name">Crude Oil</div><div class="t-val">$83.85</div><div class="t-chg neg">▼ -13.17% WTD</div></div><div class="t-item"><div class="t-name">Gold</div><div class="t-val">$4,857.60</div><div class="t-chg pos">▲ +2.01% WTD</div></div><div class="t-item"><div class="t-name">VIX</div><div class="t-val">17.48</div><div class="t-chg neg">▼ -9.1% WTD</div></div><div class="t-item"><div class="t-name">Bitcoin</div><div class="t-val">$75,857</div><div class="t-chg pos">▲ +1.84% WTD</div></div><div class="t-item"><div class="t-name">Ethereum</div><div class="t-val">$2,356</div><div class="t-chg neg">▼ -0.62% WTD</div></div><div class="t-item"><div class="t-name">10-Yr Yield</div><div class="t-val">4.25%</div><div class="t-chg neg">▼ 7 bps WTD</div></div><div class="t-item"><div class="t-name">S&P 500</div><div class="t-val">7,126.06</div><div class="t-chg pos">▲ +4.54% WTD</div></div><div class="t-item"><div class="t-name">Nasdaq</div><div class="t-val">24,468.48</div><div class="t-chg pos">▲ +6.84% WTD</div></div><div class="t-item"><div class="t-name">DJIA</div><div class="t-val">49,447.43</div><div class="t-chg pos">▲ +1,530 pts WTD</div></div><div class="t-item"><div class="t-name">Russell 2000</div><div class="t-val">2,776.90</div><div class="t-chg pos">▲ +5.56% WTD</div></div><div class="t-item"><div class="t-name">Crude Oil</div><div class="t-val">$83.85</div><div class="t-chg neg">▼ -13.17% WTD</div></div><div class="t-item"><div class="t-name">Gold</div><div class="t-val">$4,857.60</div><div class="t-chg pos">▲ +2.01% WTD</div></div><div class="t-item"><div class="t-name">VIX</div><div class="t-val">17.48</div><div class="t-chg neg">▼ -9.1% WTD</div></div><div class="t-item"><div class="t-name">Bitcoin</div><div class="t-val">$75,857</div><div class="t-chg pos">▲ +1.84% WTD</div></div><div class="t-item"><div class="t-name">Ethereum</div><div class="t-val">$2,356</div><div class="t-chg neg">▼ -0.62% WTD</div></div><div class="t-item"><div class="t-name">10-Yr Yield</div><div class="t-val">4.25%</div><div class="t-chg neg">▼ 7 bps WTD</div></div></div></div>
 </div>
 
 <div class="container">
@@ -791,53 +887,26 @@
   <div class="section">
     <div class="sec-label">SECTION 04</div>
     <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
-    <div class="co-list"><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/apple.com" class="tkr-logo" alt="AAPL logo" onerror="this.style.display='none'"><span class="tkr">AAPL</span></div><div class="co-desc"><strong>Apple</strong> Closed the week at $270.23, posting a +3.74% move.</div><span class="co-mv pos">▲ +3.74%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/microsoft.com" class="tkr-logo" alt="MSFT logo" onerror="this.style.display='none'"><span class="tkr">MSFT</span></div><div class="co-desc"><strong>Microsoft</strong> Closed the week at $422.79, posting a +14.0% move.</div><span class="co-mv pos">▲ +14.0%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/nvidia.com" class="tkr-logo" alt="NVDA logo" onerror="this.style.display='none'"><span class="tkr">NVDA</span></div><div class="co-desc"><strong>Nvidia</strong> Closed the week at $201.68, posting a +6.92% move.</div><span class="co-mv pos">▲ +6.92%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/amazon.com" class="tkr-logo" alt="AMZN logo" onerror="this.style.display='none'"><span class="tkr">AMZN</span></div><div class="co-desc"><strong>Amazon</strong> Closed the week at $250.56, posting a +5.11% move.</div><span class="co-mv pos">▲ +5.11%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/meta.com" class="tkr-logo" alt="META logo" onerror="this.style.display='none'"><span class="tkr">META</span></div><div class="co-desc"><strong>Meta Platforms</strong> Closed the week at $688.55, posting a +9.32% move.</div><span class="co-mv pos">▲ +9.32%</span></div></div>
+    <div class="sec-intro">The five largest U.S. mega-cap tech constituents drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
+    <div class="co-list"><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/apple.com" class="tkr-logo" alt="AAPL logo" onerror="this.style.display='none'"><span class="tkr">AAPL</span></div><div class="co-body"><div class="co-desc"><strong>Apple</strong> Closed the week at $270.23, posting a +3.74% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$270.23</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$9.75</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$272.30</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$256.66</span></span></div></div><span class="co-mv pos">▲ +3.74%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/microsoft.com" class="tkr-logo" alt="MSFT logo" onerror="this.style.display='none'"><span class="tkr">MSFT</span></div><div class="co-body"><div class="co-desc"><strong>Microsoft</strong> Closed the week at $422.79, posting a +14.0% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$422.79</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$51.92</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$431.58</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$371.02</span></span></div></div><span class="co-mv pos">▲ +14.0%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/nvidia.com" class="tkr-logo" alt="NVDA logo" onerror="this.style.display='none'"><span class="tkr">NVDA</span></div><div class="co-body"><div class="co-desc"><strong>Nvidia</strong> Closed the week at $201.68, posting a +6.92% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$201.68</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$13.05</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$201.70</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$185.74</span></span></div></div><span class="co-mv pos">▲ +6.92%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/amazon.com" class="tkr-logo" alt="AMZN logo" onerror="this.style.display='none'"><span class="tkr">AMZN</span></div><div class="co-body"><div class="co-desc"><strong>Amazon</strong> Closed the week at $250.56, posting a +5.11% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$250.56</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$12.18</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$256.18</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$235.75</span></span></div></div><span class="co-mv pos">▲ +5.11%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://logo.clearbit.com/meta.com" class="tkr-logo" alt="META logo" onerror="this.style.display='none'"><span class="tkr">META</span></div><div class="co-body"><div class="co-desc"><strong>Meta Platforms</strong> Closed the week at $688.55, posting a +9.32% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$688.55</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$58.69</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$691.52</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$624.40</span></span></div></div><span class="co-mv pos">▲ +9.32%</span></div></div>
   </div>
 
   <div class="section">
     <div class="sec-label">SECTION 05</div>
     <div class="sec-title">Cryptocurrency Market Recap</div>
-    <div class="crypto-grid">
-      <div class="cc">
-        <div class="cc-name">Bitcoin (BTC)</div>
-        <div class="cc-price">$75,827</div>
-        <div class="cc-chg pos">&#9650; +1.8% WTD</div>
-      </div>
-      <div class="cc">
-        <div class="cc-name">Ethereum (ETH)</div>
-        <div class="cc-price">$2,357</div>
-        <div class="cc-chg neg">&#9660; 0.59% WTD</div>
-      </div>
-      <div class="cc">
-        <div class="cc-name">Solana (SOL)</div>
-        <div class="cc-price">$86.23</div>
-        <div class="cc-chg neg">&#9660; 0.49% WTD</div>
-      </div>
-      <div class="cc">
-        <div class="cc-name">XRP</div>
-        <div class="cc-price">$1.4400</div>
-        <div class="cc-chg pos">&#9650; +4.6% WTD</div>
-      </div>
-    </div>
+    <div class="sec-intro">Weekly performance across the four most-tracked digital assets. Each tile shows the closing price, WTD change, the intraweek 5-day range, and an analyst note on what drove the move.</div>
+    <div class="crypto-grid"><div class="cc"><div class="cc-head"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" class="cc-logo" alt="BTC logo" onerror="this.style.display='none'"><div class="cc-name">Bitcoin (BTC)</div></div><div class="cc-price">$75,857</div><div class="cc-chg pos">▲ +1.84% WTD</div><div class="cc-range"><span class="cc-range-lbl">5D Range</span> <span class="cc-range-val">$73,346.27 – $78,320.68</span></div><div class="cc-desc">Closed at $75,857 with a 5-day range of $73,346–$78,321, tracking broad risk sentiment.</div></div><div class="cc"><div class="cc-head"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCETH.svg" class="cc-logo" alt="ETH logo" onerror="this.style.display='none'"><div class="cc-name">Ethereum (ETH)</div></div><div class="cc-price">$2,356</div><div class="cc-chg neg">▼ -0.62% WTD</div><div class="cc-range"><span class="cc-range-lbl">5D Range</span> <span class="cc-range-val">$2,285.71 – $2,464.78</span></div><div class="cc-desc">Settled at $2,356, with relative performance to BTC reflecting shifts in layer-1 narrative flow.</div></div><div class="cc"><div class="cc-head"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSOL.svg" class="cc-logo" alt="SOL logo" onerror="this.style.display='none'"><div class="cc-name">Solana (SOL)</div></div><div class="cc-price">$86.38</div><div class="cc-chg neg">▼ -0.32% WTD</div><div class="cc-range"><span class="cc-range-lbl">5D Range</span> <span class="cc-range-val">$82.75 – $90.67</span></div><div class="cc-desc">Finished at $86.38, moving in line with broader high-beta crypto exposure.</div></div><div class="cc"><div class="cc-head"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCXRP.svg" class="cc-logo" alt="XRP logo" onerror="this.style.display='none'"><div class="cc-name">XRP (XRP)</div></div><div class="cc-price">$1.4400</div><div class="cc-chg pos">▲ +4.6% WTD</div><div class="cc-range"><span class="cc-range-lbl">5D Range</span> <span class="cc-range-val">$1.35 – $1.51</span></div><div class="cc-desc">Printed at $1.4400, with regulatory and payments-sector headlines driving the tape.</div></div></div>
   </div>
 
   <div class="section">
     <div class="sec-label">SECTION 06</div>
     <div class="sec-title">Global Market Context</div>
+    <div class="sec-intro">Non-U.S. developed and Asian market performance provides cross-border read-through on macro drivers, currency effects, and regional risk appetite.</div>
     <div class="table-wrap" style="margin-bottom:26px;">
       <table class="gtable">
-        <thead><tr><th>Index / Asset</th><th>WTD Performance</th><th>Status</th></tr></thead>
+        <thead><tr><th>Index / Asset</th><th>Close</th><th>WTD</th><th>Status</th></tr></thead>
         <tbody>
-          <tr>
-            <td>Nikkei 225 (Japan)</td>
-            <td class="pos">+2.73%</td>
-            <td>Japanese equities tracked broader global momentum flows this week.</td>
-          </tr>
-          <tr>
-            <td>Euro Stoxx 50 (EU)</td>
-            <td class="pos">+2.22%</td>
-            <td>European blue-chip stocks digested the latest economic policy signaling.</td>
-          </tr>
+          <tr><td>Nikkei 225 (Japan)</td><td>58,475.90</td><td class="pos">+2.73%</td><td>Japanese equities tracked broader global momentum flows this week.</td></tr><tr><td>Euro Stoxx 50 (EU)</td><td>6,057.71</td><td class="pos">+2.22%</td><td>European blue-chip stocks digested the latest economic policy signaling.</td></tr><tr><td>FTSE 100 (UK)</td><td>10,667.60</td><td class="pos">+0.63%</td><td>UK large-caps reflected commodity sensitivity and sterling moves against the dollar.</td></tr><tr><td>Hang Seng (HK)</td><td>26,160.33</td><td class="pos">+1.03%</td><td>Hong Kong shares traded on China policy cues and tech sector sentiment.</td></tr>
         </tbody>
       </table>
     </div>
