@@ -28,6 +28,8 @@ SANITY_BOUNDS = {
     "DX-Y.NYB":  (50,   200),
     "^N225":     (10000, 60000),
     "^STOXX50E": (2000,  7000),
+    "^FTSE":     (4000,  15000),
+    "^HSI":      (10000, 50000),
 }
 
 FALLBACKS = {
@@ -61,15 +63,21 @@ def fetch_weekly_data(ticker_symbol):
             chart_hist = hist.iloc[-5:]
             dates      = [d.strftime('%a %m/%d') for d in chart_hist.index]
             closes     = [round(float(v), 2) for v in chart_hist['Close'].tolist()]
+            highs      = [round(float(v), 2) for v in chart_hist['High'].tolist()]
+            lows       = [round(float(v), 2) for v in chart_hist['Low'].tolist()]
             end_price  = closes[-1]
             if not is_sane(tk, end_price):
                 print(f"  Sanity check FAILED for {tk}: end_price={end_price} — trying fallback")
                 continue
             pct_change = ((end_price - prev_close) / prev_close) * 100 if prev_close != 0 else 0.0
             abs_change = end_price - prev_close
+            week_high  = max(highs) if highs else end_price
+            week_low   = min(lows) if lows else end_price
             return {
                 "dates": dates, "closes": closes, "end_price": end_price,
                 "pct_change": round(pct_change, 2), "abs_change": round(abs_change, 2),
+                "prev_close": round(prev_close, 2),
+                "week_high": week_high, "week_low": week_low,
                 "ticker_used": tk, "error": None,
             }
         except Exception as e:
@@ -77,7 +85,8 @@ def fetch_weekly_data(ticker_symbol):
             continue
     print(f"  All fetch attempts failed for {ticker_symbol}. Using zeroed data.")
     return {"dates": [], "closes": [], "end_price": 0.0, "pct_change": 0.0,
-            "abs_change": 0.0, "ticker_used": ticker_symbol, "error": f"Data unavailable for {ticker_symbol}"}
+            "abs_change": 0.0, "prev_close": 0.0, "week_high": 0.0, "week_low": 0.0,
+            "ticker_used": ticker_symbol, "error": f"Data unavailable for {ticker_symbol}"}
 
 # ─────────────────────────────────────────────
 # CLAUDE API HELPERS
@@ -234,6 +243,8 @@ def generate_html():
     xrp  = fetch_weekly_data("XRP-USD")
     n225 = fetch_weekly_data("^N225")
     stoxx= fetch_weekly_data("^STOXX50E")
+    ftse = fetch_weekly_data("^FTSE")
+    hsi  = fetch_weekly_data("^HSI")
 
     if sp["dates"]:
         sp_ticker   = yf.Ticker("^GSPC")
@@ -323,6 +334,7 @@ def generate_html():
     for tk, v in megacap_data.items():
         r       = v["result"]
         c_pct   = r["pct_change"]
+        c_abs   = r["abs_change"]
         c_color = "pos" if c_pct >= 0 else "neg"
         c_arrow = "\u25b2" if c_pct >= 0 else "\u25bc"
         c_sign  = "+" if c_pct >= 0 else ""
@@ -333,7 +345,15 @@ def generate_html():
         megacap_html += (
             f'<div class="co-row">'
             f'<div class="tkr-wrap">{logo_html}<span class="tkr">{tk}</span></div>'
+            f'<div class="co-body">'
             f'<div class="co-desc"><strong>{v["name"]}</strong>{err_note} {desc}</div>'
+            f'<div class="co-stats">'
+            f'<span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">${r["end_price"]:,.2f}</span></span>'
+            f'<span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val {c_color}">{c_sign}${abs(c_abs):,.2f}</span></span>'
+            f'<span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">${r["week_high"]:,.2f}</span></span>'
+            f'<span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">${r["week_low"]:,.2f}</span></span>'
+            f'</div>'
+            f'</div>'
             f'<span class="co-mv {c_color}">{c_arrow} {c_sign}{c_pct}%</span>'
             f'</div>'
         )
@@ -356,13 +376,70 @@ def generate_html():
         "You are writing one-sentence status descriptions for a weekly global equity market summary. "
         "Each sentence must be specific to the index named and its actual performance — do not be generic. "
         "Do NOT start with the index name. Start with the insight or dynamic directly. "
-        "Respond ONLY with JSON with keys nikkei, stoxx. No markdown.\n"
-        f"Nikkei 225 (Japan): {'+' if n225['pct_change'] >= 0 else ''}{n225['pct_change']}% WTD\n"
-        f"Euro Stoxx 50 (EU): {'+' if stoxx['pct_change'] >= 0 else ''}{stoxx['pct_change']}% WTD\n"
+        "Respond ONLY with JSON with keys nikkei, stoxx, ftse, hsi. No markdown.\n"
+        f"Nikkei 225 (Japan): {'+' if n225['pct_change'] >= 0 else ''}{n225['pct_change']}% WTD, close {n225['end_price']:,.2f}\n"
+        f"Euro Stoxx 50 (EU): {'+' if stoxx['pct_change'] >= 0 else ''}{stoxx['pct_change']}% WTD, close {stoxx['end_price']:,.2f}\n"
+        f"FTSE 100 (UK): {'+' if ftse['pct_change'] >= 0 else ''}{ftse['pct_change']}% WTD, close {ftse['end_price']:,.2f}\n"
+        f"Hang Seng (HK): {'+' if hsi['pct_change'] >= 0 else ''}{hsi['pct_change']}% WTD, close {hsi['end_price']:,.2f}\n"
         f"S&P 500 context: {'+' if sp_pct >= 0 else ''}{sp_pct}% WTD, VIX {vix_close:.2f}, 10-yr yield {tnx['end_price']:.2f}%"
     )
-    global_fallback = {"nikkei": "Japanese equities tracked broader global momentum flows this week.", "stoxx": "European blue-chip stocks digested the latest economic policy signaling."}
-    global_status = claude_json(global_prompt, required_keys={"nikkei","stoxx"}, max_tokens=150, fallback=global_fallback)
+    global_fallback = {
+        "nikkei": "Japanese equities tracked broader global momentum flows this week.",
+        "stoxx":  "European blue-chip stocks digested the latest economic policy signaling.",
+        "ftse":   "UK large-caps reflected commodity sensitivity and sterling moves against the dollar.",
+        "hsi":    "Hong Kong shares traded on China policy cues and tech sector sentiment.",
+    }
+    global_status = claude_json(global_prompt, required_keys={"nikkei","stoxx","ftse","hsi"}, max_tokens=300, fallback=global_fallback)
+
+    # Claude: crypto descriptions
+    print("Generating crypto descriptions via Claude...")
+    crypto_prompt = (
+        "You are writing one-sentence analytical notes for a weekly cryptocurrency market summary. "
+        "Each sentence must be specific to the asset and its actual performance this week — no generic phrasing. "
+        "Do NOT start the sentence with the asset name. Start with the action, dynamic, or insight directly. "
+        "Respond ONLY with JSON with keys btc, eth, sol, xrp. No markdown.\n"
+        f"Bitcoin (BTC): {'+' if btc['pct_change'] >= 0 else ''}{btc['pct_change']}% WTD, close ${btc['end_price']:,.0f}, 5D high ${btc['week_high']:,.0f}, 5D low ${btc['week_low']:,.0f}\n"
+        f"Ethereum (ETH): {'+' if eth['pct_change'] >= 0 else ''}{eth['pct_change']}% WTD, close ${eth['end_price']:,.0f}, 5D high ${eth['week_high']:,.0f}, 5D low ${eth['week_low']:,.0f}\n"
+        f"Solana (SOL): {'+' if sol['pct_change'] >= 0 else ''}{sol['pct_change']}% WTD, close ${sol['end_price']:.2f}\n"
+        f"XRP: {'+' if xrp['pct_change'] >= 0 else ''}{xrp['pct_change']}% WTD, close ${xrp['end_price']:.4f}\n"
+        f"Equity context: S&P 500 {'+' if sp_pct >= 0 else ''}{sp_pct}% WTD, VIX {vix_close:.2f}"
+    )
+    crypto_fallback = {
+        "btc": f"Closed at ${btc['end_price']:,.0f} with a 5-day range of ${btc['week_low']:,.0f}–${btc['week_high']:,.0f}, tracking broad risk sentiment.",
+        "eth": f"Settled at ${eth['end_price']:,.0f}, with relative performance to BTC reflecting shifts in layer-1 narrative flow.",
+        "sol": f"Finished at ${sol['end_price']:.2f}, moving in line with broader high-beta crypto exposure.",
+        "xrp": f"Printed at ${xrp['end_price']:.4f}, with regulatory and payments-sector headlines driving the tape.",
+    }
+    crypto_descriptions = claude_json(crypto_prompt, required_keys={"btc","eth","sol","xrp"}, max_tokens=400, fallback=crypto_fallback)
+
+    # TradingView crypto logos (with fallback hiding on error)
+    # Pattern: s3-symbol-logo.tradingview.com/crypto/XTVC{SYMBOL}.svg
+    def crypto_card(name, symbol, tv_symbol, price_str, data, desc):
+        c_pct   = data["pct_change"]
+        c_color = "pos" if c_pct >= 0 else "neg"
+        c_arrow = "\u25b2" if c_pct >= 0 else "\u25bc"
+        c_sign  = "+" if c_pct >= 0 else ""
+        logo    = f'https://s3-symbol-logo.tradingview.com/crypto/XTVC{tv_symbol}.svg'
+        return (
+            f'<div class="cc">'
+            f'<div class="cc-head">'
+            f'<img src="{logo}" class="cc-logo" alt="{symbol} logo" onerror="this.style.display=\'none\'">'
+            f'<div class="cc-name">{name} ({symbol})</div>'
+            f'</div>'
+            f'<div class="cc-price">{price_str}</div>'
+            f'<div class="cc-chg {c_color}">{c_arrow} {c_sign}{c_pct}% WTD</div>'
+            f'<div class="cc-range"><span class="cc-range-lbl">5D Range</span> '
+            f'<span class="cc-range-val">${data["week_low"]:,.2f} – ${data["week_high"]:,.2f}</span></div>'
+            f'<div class="cc-desc">{desc}</div>'
+            f'</div>'
+        )
+
+    crypto_html = (
+        crypto_card("Bitcoin", "BTC", "BTC", f"${btc['end_price']:,.0f}", btc, crypto_descriptions["btc"])
+      + crypto_card("Ethereum", "ETH", "ETH", f"${eth['end_price']:,.0f}", eth, crypto_descriptions["eth"])
+      + crypto_card("Solana", "SOL", "SOL", f"${sol['end_price']:.2f}", sol, crypto_descriptions["sol"])
+      + crypto_card("XRP", "XRP", "XRP", f"${xrp['end_price']:.4f}", xrp, crypto_descriptions["xrp"])
+    )
 
     # Claude: investor takeaway
     print("Generating investor takeaway via Claude...")
@@ -421,6 +498,26 @@ def generate_html():
     sp_dates = sp["dates"]
     sp_data  = sp["closes"]
 
+    # Global market table rows (Section 06)
+    def global_row(name, data, status_text):
+        color = "pos" if data["pct_change"] >= 0 else "neg"
+        sign  = "+" if data["pct_change"] >= 0 else ""
+        return (
+            f'<tr>'
+            f'<td>{name}</td>'
+            f'<td>{data["end_price"]:,.2f}</td>'
+            f'<td class="{color}">{sign}{data["pct_change"]}%</td>'
+            f'<td>{status_text}</td>'
+            f'</tr>'
+        )
+
+    global_rows_html = (
+        global_row("Nikkei 225 (Japan)", n225, global_status["nikkei"])
+      + global_row("Euro Stoxx 50 (EU)", stoxx, global_status["stoxx"])
+      + global_row("FTSE 100 (UK)", ftse, global_status["ftse"])
+      + global_row("Hang Seng (HK)", hsi, global_status["hsi"])
+    )
+
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -442,6 +539,8 @@ def generate_html():
     --text: #f0f4ff;
     --muted: #8a8fa8;
     --label: #a0a8c0;
+    --nav-bg: rgba(10, 10, 15, 0.92);
+    --title-color: #ffffff;
     --shadow-dark: 0 18px 40px -16px rgba(0, 0, 0, 0.45);
     --shadow-glow: 0 18px 38px -16px rgba(0, 240, 255, 0.22);
   }}
@@ -459,6 +558,8 @@ def generate_html():
     --text: #1a1f2e;
     --muted: #64748b;
     --label: #475569;
+    --nav-bg: rgba(248, 249, 252, 0.92);
+    --title-color: #1a1f2e;
     --shadow-dark: 0 16px 34px -18px rgba(0, 0, 0, 0.14);
     --shadow-glow: 0 18px 34px -18px rgba(0, 170, 255, 0.16);
   }}
@@ -506,7 +607,7 @@ def generate_html():
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: rgba(10, 10, 15, 0.92);
+    background: var(--nav-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
@@ -553,7 +654,8 @@ def generate_html():
   .week-title {{
     font-size: clamp(28px, 4vw, 48px);
     line-height: 1.05;
-    color: #fff;
+    color: var(--title-color);
+    transition: color 0.3s ease;
   }}
 
   .week-title span {{ color: var(--accent); }}
@@ -624,16 +726,17 @@ def generate_html():
   }}
 
   .ticker-track {{
-    display: inline-flex;
-    animation: scrollTicker 40s linear infinite;
-    white-space: nowrap;
+    display: flex;
+    width: max-content;
+    animation: scrollTicker 60s linear infinite;
+    will-change: transform;
   }}
 
   .ticker-track:hover {{ animation-play-state: paused; }}
 
   @keyframes scrollTicker {{
-    0% {{ transform: translateX(0); }}
-    100% {{ transform: translateX(-50%); }}
+    from {{ transform: translateX(0); }}
+    to   {{ transform: translateX(-50%); }}
   }}
 
   @keyframes pulse {{
@@ -646,7 +749,7 @@ def generate_html():
     flex-direction: column;
     gap: 3px;
     padding: 14px 32px;
-    min-width: max-content;
+    flex-shrink: 0;
     border-right: 1px solid var(--border);
   }}
 
@@ -704,6 +807,14 @@ def generate_html():
     font-weight: 600;
     letter-spacing: -0.02em;
     margin-bottom: 24px;
+  }}
+
+  .sec-intro {{
+    font-size: 14px;
+    color: var(--label);
+    line-height: 1.65;
+    margin-bottom: 24px;
+    max-width: 820px;
   }}
 
   .idx-grid {{
@@ -891,7 +1002,7 @@ def generate_html():
     display: flex;
     align-items: flex-start;
     gap: 18px;
-    padding: 20px 0;
+    padding: 22px 0;
     border-bottom: 1px solid var(--border);
   }}
 
@@ -906,8 +1017,8 @@ def generate_html():
   }}
 
   .tkr-logo {{
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 8px;
     object-fit: contain;
     background: #fff;
@@ -927,17 +1038,51 @@ def generate_html():
     text-align: center;
   }}
 
-  .co-desc {{
+  .co-body {{
     flex: 1;
+    min-width: 0;
+  }}
+
+  .co-desc {{
     font-size: 14.5px;
     line-height: 1.65;
     color: var(--text);
+    margin-bottom: 10px;
   }}
 
   .co-desc strong {{ font-weight: 700; }}
 
+  .co-stats {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    font-size: 12px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }}
+
+  .co-stat {{
+    display: inline-flex;
+    gap: 6px;
+    align-items: baseline;
+  }}
+
+  .co-stat-lbl {{
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 700;
+  }}
+
+  .co-stat-val {{
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+  }}
+
   .co-mv {{
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     margin-top: 4px;
     white-space: nowrap;
@@ -945,8 +1090,8 @@ def generate_html():
 
   .crypto-grid {{
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
     margin-bottom: 32px;
   }}
 
@@ -955,15 +1100,33 @@ def generate_html():
     padding: 24px;
     border-radius: 16px;
     box-shadow: var(--shadow-dark);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }}
+
+  .cc-head {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }}
+
+  .cc-logo {{
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: var(--surface2);
+    padding: 3px;
+    flex-shrink: 0;
   }}
 
   .cc-name {{
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.12em;
     color: var(--muted);
     text-transform: uppercase;
     font-weight: 700;
-    margin-bottom: 8px;
   }}
 
   .cc-price {{
@@ -971,12 +1134,41 @@ def generate_html():
     font-size: 28px;
     font-weight: 700;
     line-height: 1;
-    margin-bottom: 10px;
   }}
 
   .cc-chg {{
     font-size: 13px;
     font-weight: 700;
+  }}
+
+  .cc-range {{
+    font-size: 11.5px;
+    color: var(--label);
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border);
+  }}
+
+  .cc-range-lbl {{
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 700;
+  }}
+
+  .cc-range-val {{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: var(--text);
+  }}
+
+  .cc-desc {{
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--label);
   }}
 
   .table-wrap {{
@@ -1014,7 +1206,8 @@ def generate_html():
 
   .gtable tr:last-child td {{ border-bottom: none; }}
   .gtable td:first-child {{ font-weight: 700; white-space: nowrap; }}
-  .gtable td:nth-child(2) {{ font-weight: 700; width: 140px; }}
+  .gtable td:nth-child(2) {{ font-weight: 700; width: 120px; font-family: 'Space Grotesk', sans-serif; }}
+  .gtable td:nth-child(3) {{ font-weight: 700; width: 100px; }}
 
   .takeaway {{
     background: var(--surface);
@@ -1214,53 +1407,26 @@ def generate_html():
   <div class="section">
     <div class="sec-label">SECTION 04</div>
     <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
+    <div class="sec-intro">The five largest U.S. mega-cap tech constituents drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
     <div class="co-list">{megacap_html}</div>
   </div>
 
   <div class="section">
     <div class="sec-label">SECTION 05</div>
     <div class="sec-title">Cryptocurrency Market Recap</div>
-    <div class="crypto-grid">
-      <div class="cc">
-        <div class="cc-name">Bitcoin (BTC)</div>
-        <div class="cc-price">${btc['end_price']:,.0f}</div>
-        <div class="cc-chg {'pos' if btc['pct_change'] >= 0 else 'neg'}">{'&#9650;' if btc['pct_change'] >= 0 else '&#9660;'} {'+' if btc['pct_change'] >= 0 else ''}{abs(btc['pct_change'])}% WTD</div>
-      </div>
-      <div class="cc">
-        <div class="cc-name">Ethereum (ETH)</div>
-        <div class="cc-price">${eth['end_price']:,.0f}</div>
-        <div class="cc-chg {'pos' if eth['pct_change'] >= 0 else 'neg'}">{'&#9650;' if eth['pct_change'] >= 0 else '&#9660;'} {'+' if eth['pct_change'] >= 0 else ''}{abs(eth['pct_change'])}% WTD</div>
-      </div>
-      <div class="cc">
-        <div class="cc-name">Solana (SOL)</div>
-        <div class="cc-price">${sol['end_price']:.2f}</div>
-        <div class="cc-chg {'pos' if sol['pct_change'] >= 0 else 'neg'}">{'&#9650;' if sol['pct_change'] >= 0 else '&#9660;'} {'+' if sol['pct_change'] >= 0 else ''}{abs(sol['pct_change'])}% WTD</div>
-      </div>
-      <div class="cc">
-        <div class="cc-name">XRP</div>
-        <div class="cc-price">${xrp['end_price']:.4f}</div>
-        <div class="cc-chg {'pos' if xrp['pct_change'] >= 0 else 'neg'}">{'&#9650;' if xrp['pct_change'] >= 0 else '&#9660;'} {'+' if xrp['pct_change'] >= 0 else ''}{abs(xrp['pct_change'])}% WTD</div>
-      </div>
-    </div>
+    <div class="sec-intro">Weekly performance across the four most-tracked digital assets. Each tile shows the closing price, WTD change, the intraweek 5-day range, and an analyst note on what drove the move.</div>
+    <div class="crypto-grid">{crypto_html}</div>
   </div>
 
   <div class="section">
     <div class="sec-label">SECTION 06</div>
     <div class="sec-title">Global Market Context</div>
+    <div class="sec-intro">Non-U.S. developed and Asian market performance provides cross-border read-through on macro drivers, currency effects, and regional risk appetite.</div>
     <div class="table-wrap" style="margin-bottom:26px;">
       <table class="gtable">
-        <thead><tr><th>Index / Asset</th><th>WTD Performance</th><th>Status</th></tr></thead>
+        <thead><tr><th>Index / Asset</th><th>Close</th><th>WTD</th><th>Status</th></tr></thead>
         <tbody>
-          <tr>
-            <td>Nikkei 225 (Japan)</td>
-            <td class="{'pos' if n225['pct_change'] >= 0 else 'neg'}">{'+' if n225['pct_change'] >= 0 else ''}{n225['pct_change']}%</td>
-            <td>{global_status['nikkei']}</td>
-          </tr>
-          <tr>
-            <td>Euro Stoxx 50 (EU)</td>
-            <td class="{'pos' if stoxx['pct_change'] >= 0 else 'neg'}">{'+' if stoxx['pct_change'] >= 0 else ''}{stoxx['pct_change']}%</td>
-            <td>{global_status['stoxx']}</td>
-          </tr>
+          {global_rows_html}
         </tbody>
       </table>
     </div>
