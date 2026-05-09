@@ -1554,6 +1554,21 @@ main
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }}
 
+  function dedupeMegaCapRows() {{
+    const seen = new Set();
+    document.querySelectorAll('.co-list .co-row').forEach((row) => {{
+      const ticker = row.dataset.ticker || row.querySelector('.tkr')?.textContent?.trim();
+      if (!ticker) return;
+      if (seen.has(ticker)) {{
+        row.remove();
+        return;
+      }}
+      seen.add(ticker);
+    }});
+  }}
+
+  dedupeMegaCapRows();
+
   const ctx = document.getElementById('spxChart').getContext('2d');
   let spxChart;
 
@@ -1567,6 +1582,36 @@ main
     return gradient;
   }}
 
+  function drawCanvasFallback() {{
+    if (!prices.length) return;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth || canvas.parentElement.clientWidth || 800;
+    const height = canvas.clientHeight || 170;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min || 1;
+    const pad = 16;
+    const xStep = (width - pad * 2) / Math.max(prices.length - 1, 1);
+    const yFor = (price) => height - pad - ((price - min) / range) * (height - pad * 2);
+
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (let i = 1; i < prices.length; i++) {{
+      ctx.beginPath();
+      ctx.strokeStyle = prices[i] >= prices[i - 1] ? getCssVar('--green') : getCssVar('--red');
+      ctx.moveTo(pad + (i - 1) * xStep, yFor(prices[i - 1]));
+      ctx.lineTo(pad + i * xStep, yFor(prices[i]));
+      ctx.stroke();
+    }}
+  }}
+
   function renderChart() {{
     const textMuted  = getCssVar('--muted');
     const isLight    = document.documentElement.classList.contains('light');
@@ -1574,6 +1619,11 @@ main
     const upColor    = getCssVar('--green');
     const downColor  = getCssVar('--red');
     const pointBorder= getCssVar('--accent');
+
+    if (typeof Chart === 'undefined') {{
+      drawCanvasFallback();
+      return;
+    }}
 
     if (spxChart) spxChart.destroy();
 
