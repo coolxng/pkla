@@ -1307,6 +1307,7 @@ def generate_html():
     flex-wrap: wrap;
   }}
 
+codex/add-ai-stocks-to-existing-list-5r9c2x
   .chart-area {{
     position: relative;
     height: 170px;
@@ -1319,6 +1320,10 @@ def generate_html():
     width: 100% !important;
     height: 170px !important;
     max-height: 170px !important;
+
+  .chart-canvas {{
+    height: 170px;
+main
   }}
 
   .chart-lbl {{
@@ -1529,6 +1534,7 @@ def generate_html():
       <div class="chart-area">
         <canvas id="spxChart" class="chart-canvas" height="170"></canvas>
       </div>
+      <canvas id="spxChart" class="chart-canvas"></canvas>
     </div>
   </div>
 </div>
