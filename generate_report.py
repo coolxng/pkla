@@ -369,7 +369,11 @@ def generate_html():
         "MU": "micron-technology",
     }
     megacap_html = ""
+    rendered_megacaps = set()
     for tk, v in megacap_data.items():
+        if tk in rendered_megacaps:
+            continue
+        rendered_megacaps.add(tk)
         r       = v["result"]
         c_pct   = r["pct_change"]
         c_abs   = r["abs_change"]
@@ -381,7 +385,7 @@ def generate_html():
         slug    = logo_slugs.get(tk, "")
         logo_html = f'<img src="https://s3-symbol-logo.tradingview.com/{slug}.svg" class="tkr-logo" alt="{tk} logo" onerror="this.style.display=\'none\'">' if slug else ""
         megacap_html += (
-            f'<div class="co-row">'
+            f'<div class="co-row" data-ticker="{tk}">'
             f'<div class="tkr-wrap">{logo_html}<span class="tkr">{tk}</span></div>'
             f'<div class="co-body">'
             f'<div class="co-desc"><strong>{v["name"]}</strong>{err_note} {desc}</div>'
@@ -1303,8 +1307,23 @@ def generate_html():
     flex-wrap: wrap;
   }}
 
+codex/add-ai-stocks-to-existing-list-5r9c2x
+  .chart-area {{
+    position: relative;
+    height: 170px;
+    max-height: 170px;
+    overflow: hidden;
+  }}
+
+  .chart-canvas {{
+    display: block;
+    width: 100% !important;
+    height: 170px !important;
+    max-height: 170px !important;
+
   .chart-canvas {{
     height: 170px;
+main
   }}
 
   .chart-lbl {{
@@ -1511,6 +1530,9 @@ def generate_html():
       <div class="chart-hdr">
         <div class="chart-lbl">S&amp;P 500 (SPX) &bull; Hourly Prices Across the Week</div>
         <div class="chart-lbl">Live Data via yfinance &bull; AI Analysis via Claude</div>
+      </div>
+      <div class="chart-area">
+        <canvas id="spxChart" class="chart-canvas" height="170"></canvas>
       </div>
       <canvas id="spxChart" class="chart-canvas"></canvas>
     </div>
