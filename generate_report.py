@@ -88,6 +88,22 @@ def fetch_weekly_data(ticker_symbol):
             "abs_change": 0.0, "prev_close": 0.0, "week_high": 0.0, "week_low": 0.0,
             "ticker_used": ticker_symbol, "error": f"Data unavailable for {ticker_symbol}"}
 
+def fetch_weekly_chart_data(ticker_symbol):
+    """Fetch hourly price points for the chart while keeping daily data for summary stats."""
+    try:
+        ticker = yf.Ticker(ticker_symbol)
+        hist = ticker.history(period="5d", interval="1h")
+        if len(hist) < 2:
+            raise ValueError("Not enough hourly data returned")
+        hist = hist.dropna(subset=["Close"])
+        dates = [d.strftime('%a %m/%d %I:%M %p') for d in hist.index]
+        closes = [round(float(v), 2) for v in hist['Close'].tolist()]
+        return {"dates": dates, "closes": closes, "error": None}
+    except Exception as e:
+        print(f"  Exception fetching hourly chart data for {ticker_symbol}: {e} — using daily chart fallback")
+        fallback = fetch_weekly_data(ticker_symbol)
+        return {"dates": fallback["dates"], "closes": fallback["closes"], "error": fallback.get("error")}
+
 # ─────────────────────────────────────────────
 # CLAUDE API HELPERS
 # ─────────────────────────────────────────────
@@ -306,7 +322,17 @@ def generate_html():
 
     # Claude: mega-cap descriptions
     print("Generating mega-cap descriptions via Claude...")
-    megacaps = {"AAPL": "Apple", "MSFT": "Microsoft", "NVDA": "Nvidia", "AMZN": "Amazon", "META": "Meta Platforms"}
+    megacaps = {
+        "AAPL": "Apple",
+        "MSFT": "Microsoft",
+        "NVDA": "Nvidia",
+        "AMZN": "Amazon",
+        "META": "Meta Platforms",
+        "SNDK": "SanDisk",
+        "AMD": "Advanced Micro Devices",
+        "INTC": "Intel",
+        "MU": "Micron Technology",
+    }
     megacap_data = {tk: {"name": name, "result": fetch_weekly_data(tk)} for tk, name in megacaps.items()}
     mc_lines = "\n".join(
         f"- {tk} ({v['name']}) closed at ${v['result']['end_price']:,.2f}, "
@@ -327,7 +353,7 @@ def generate_html():
         tk: f"Closed the week at ${v['result']['end_price']:,.2f}, posting a {'+' if v['result']['pct_change'] >= 0 else ''}{v['result']['pct_change']}% move."
         for tk, v in megacap_data.items()
     }
-    mc_descriptions = claude_json(mc_prompt, required_keys=set(megacap_data.keys()), max_tokens=500, fallback=mc_fallback)
+    mc_descriptions = claude_json(mc_prompt, required_keys=set(megacap_data.keys()), max_tokens=900, fallback=mc_fallback)
 
     # TradingView stock logos
     # Pattern: https://s3-symbol-logo.tradingview.com/{slug}.svg
@@ -337,9 +363,17 @@ def generate_html():
         "NVDA": "nvidia",
         "AMZN": "amazon",
         "META": "meta-platforms",
+        "SNDK": "sandisk",
+        "AMD": "advanced-micro-devices",
+        "INTC": "intel",
+        "MU": "micron-technology",
     }
     megacap_html = ""
+    rendered_megacaps = set()
     for tk, v in megacap_data.items():
+        if tk in rendered_megacaps:
+            continue
+        rendered_megacaps.add(tk)
         r       = v["result"]
         c_pct   = r["pct_change"]
         c_abs   = r["abs_change"]
@@ -351,7 +385,7 @@ def generate_html():
         slug    = logo_slugs.get(tk, "")
         logo_html = f'<img src="https://s3-symbol-logo.tradingview.com/{slug}.svg" class="tkr-logo" alt="{tk} logo" onerror="this.style.display=\'none\'">' if slug else ""
         megacap_html += (
-            f'<div class="co-row">'
+            f'<div class="co-row" data-ticker="{tk}">'
             f'<div class="tkr-wrap">{logo_html}<span class="tkr">{tk}</span></div>'
             f'<div class="co-body">'
             f'<div class="co-desc"><strong>{v["name"]}</strong>{err_note} {desc}</div>'
@@ -503,8 +537,9 @@ def generate_html():
     top_tags = "".join(f'<span class="tag g">{s[0]} ({chr(43) if s[1] >= 0 else ""}{s[1]}%)</span>' for s in top_sectors)
     bot_tags = "".join(f'<span class="tag r">{s[0]} ({chr(43) if s[1] >= 0 else ""}{s[1]}%)</span>' for s in bottom_sectors)
 
-    sp_dates = sp["dates"]
-    sp_data  = sp["closes"]
+    sp_chart = fetch_weekly_chart_data("^GSPC")
+    sp_dates = sp_chart["dates"]
+    sp_data  = sp_chart["closes"]
 
     # Global market table rows (Section 06)
     def global_row(name, data, status_text):
@@ -1258,7 +1293,7 @@ def generate_html():
 
   .chart-wrap {{
     background: var(--surface);
-    padding: 32px;
+    padding: 24px 28px;
     border-radius: 20px;
     box-shadow: var(--shadow-dark);
   }}
@@ -1267,9 +1302,23 @@ def generate_html():
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     gap: 12px;
     flex-wrap: wrap;
+  }}
+
+  .chart-area {{
+    position: relative;
+    height: 170px;
+    max-height: 170px;
+    overflow: hidden;
+  }}
+
+  .chart-canvas {{
+    display: block;
+    width: 100% !important;
+    height: 170px !important;
+    max-height: 170px !important;
   }}
 
   .chart-lbl {{
@@ -1414,8 +1463,8 @@ def generate_html():
 
   <div class="section">
     <div class="sec-label">SECTION 04</div>
-    <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
-    <div class="sec-intro">The five largest U.S. mega-cap tech constituents drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
+    <div class="sec-title">Mega-Cap Tech &amp; AI Semiconductor Movers</div>
+    <div class="sec-intro">Mega-cap platform companies and AI-linked semiconductor names drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
     <div class="co-list">{megacap_html}</div>
   </div>
 
@@ -1471,13 +1520,15 @@ def generate_html():
 
   <div class="section">
     <div class="sec-label">SECTION 09</div>
-    <div class="sec-title">S&amp;P 500 &mdash; Daily Close {week_start_str}&ndash;{today_str}, {year_str}</div>
+    <div class="sec-title">S&amp;P 500 &mdash; Hourly Week View {week_start_str}&ndash;{today_str}, {year_str}</div>
     <div class="chart-wrap">
       <div class="chart-hdr">
-        <div class="chart-lbl">S&amp;P 500 (SPX) &bull; Actual Daily Closing Prices</div>
+        <div class="chart-lbl">S&amp;P 500 (SPX) &bull; Hourly Prices Across the Week</div>
         <div class="chart-lbl">Live Data via yfinance &bull; AI Analysis via Claude</div>
       </div>
-      <canvas id="spxChart" height="220"></canvas>
+      <div class="chart-area">
+        <canvas id="spxChart" class="chart-canvas" height="170"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -1514,7 +1565,8 @@ def generate_html():
     const textMuted  = getCssVar('--muted');
     const isLight    = document.documentElement.classList.contains('light');
     const border     = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)';
-    const lineColor  = getCssVar('--accent');
+    const upColor    = getCssVar('--green');
+    const downColor  = getCssVar('--red');
     const pointBorder= getCssVar('--accent');
 
     if (spxChart) spxChart.destroy();
@@ -1524,9 +1576,12 @@ def generate_html():
       data: {{
         labels,
         datasets: [{{
-          label: 'S&P 500 Close',
+          label: 'S&P 500 Hourly',
           data: prices,
-          borderColor: lineColor,
+          borderColor: upColor,
+          segment: {{
+            borderColor: ctx => ctx.p1.parsed.y >= ctx.p0.parsed.y ? upColor : downColor
+          }},
           backgroundColor: (context) => {{
             const chart = context.chart;
             const {{ ctx: c, chartArea }} = chart;
@@ -1534,10 +1589,10 @@ def generate_html():
             return buildGradient(c, chartArea);
           }},
           fill: true,
-          tension: 0.4,
-          borderWidth: 3,
-          pointRadius: 5,
-          pointHoverRadius: 8,
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 5,
           pointBackgroundColor: '#fff',
           pointBorderColor: pointBorder,
           pointBorderWidth: 2
@@ -1545,7 +1600,7 @@ def generate_html():
       }},
       options: {{
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {{
           legend: {{ display: false }},
           tooltip: {{
@@ -1561,7 +1616,7 @@ def generate_html():
         scales: {{
           x: {{
             grid: {{ color: border, drawBorder: false }},
-            ticks: {{ color: textMuted, font: {{ size: 11, weight: '600' }} }}
+            ticks: {{ color: textMuted, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: {{ size: 10, weight: '600' }} }}
           }},
           y: {{
             grid: {{ color: border, drawBorder: false }},
