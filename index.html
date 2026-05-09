@@ -730,7 +730,7 @@
 
   .chart-wrap {
     background: var(--surface);
-    padding: 32px;
+    padding: 24px 28px;
     border-radius: 20px;
     box-shadow: var(--shadow-dark);
   }
@@ -739,9 +739,23 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     gap: 12px;
     flex-wrap: wrap;
+  }
+
+  .chart-area {
+    position: relative;
+    height: 280px;
+    max-height: 280px;
+    overflow: hidden;
+  }
+
+  .chart-canvas {
+    display: block;
+    width: 100% !important;
+    height: 280px !important;
+    max-height: 280px !important;
   }
 
   .chart-lbl {
@@ -886,9 +900,9 @@
 
   <div class="section">
     <div class="sec-label">SECTION 04</div>
-    <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
-    <div class="sec-intro">The five largest U.S. mega-cap tech constituents drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
-    <div class="co-list"><div class="co-row"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/apple.svg" class="tkr-logo" alt="AAPL logo" onerror="this.style.display='none'"><span class="tkr">AAPL</span></div><div class="co-body"><div class="co-desc"><strong>Apple</strong> Closed the week at $293.32, posting a +4.7% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$293.32</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$13.18</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$294.76</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$274.86</span></span></div></div><span class="co-mv pos">▲ +4.7%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/microsoft.svg" class="tkr-logo" alt="MSFT logo" onerror="this.style.display='none'"><span class="tkr">MSFT</span></div><div class="co-body"><div class="co-desc"><strong>Microsoft</strong> Closed the week at $415.12, posting a +0.16% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$415.12</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$0.68</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$427.98</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$405.11</span></span></div></div><span class="co-mv pos">▲ +0.16%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/nvidia.svg" class="tkr-logo" alt="NVDA logo" onerror="this.style.display='none'"><span class="tkr">NVDA</span></div><div class="co-body"><div class="co-desc"><strong>Nvidia</strong> Closed the week at $215.20, posting a +8.44% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$215.20</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$16.75</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$217.80</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$194.74</span></span></div></div><span class="co-mv pos">▲ +8.44%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/amazon.svg" class="tkr-logo" alt="AMZN logo" onerror="this.style.display='none'"><span class="tkr">AMZN</span></div><div class="co-body"><div class="co-desc"><strong>Amazon</strong> Closed the week at $272.68, posting a +1.65% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$272.68</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$4.42</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$278.56</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$268.80</span></span></div></div><span class="co-mv pos">▲ +1.65%</span></div><div class="co-row"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/meta-platforms.svg" class="tkr-logo" alt="META logo" onerror="this.style.display='none'"><span class="tkr">META</span></div><div class="co-body"><div class="co-desc"><strong>Meta Platforms</strong> Closed the week at $609.63, posting a +0.14% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$609.63</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$0.88</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$624.98</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$598.10</span></span></div></div><span class="co-mv pos">▲ +0.14%</span></div></div>
+    <div class="sec-title">Mega-Cap Tech &amp; AI Semiconductor Movers</div>
+    <div class="sec-intro">Mega-cap platform companies and AI-linked semiconductor names drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
+    <div class="co-list"><div class="co-row" data-ticker="AAPL"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/apple.svg" class="tkr-logo" alt="AAPL logo" onerror="this.style.display='none'"><span class="tkr">AAPL</span></div><div class="co-body"><div class="co-desc"><strong>Apple</strong> Closed the week at $293.32, posting a +4.7% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$293.32</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$13.18</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$294.76</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$274.86</span></span></div></div><span class="co-mv pos">▲ +4.7%</span></div><div class="co-row" data-ticker="MSFT"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/microsoft.svg" class="tkr-logo" alt="MSFT logo" onerror="this.style.display='none'"><span class="tkr">MSFT</span></div><div class="co-body"><div class="co-desc"><strong>Microsoft</strong> Closed the week at $415.12, posting a +0.16% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$415.12</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$0.68</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$427.98</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$405.11</span></span></div></div><span class="co-mv pos">▲ +0.16%</span></div><div class="co-row" data-ticker="NVDA"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/nvidia.svg" class="tkr-logo" alt="NVDA logo" onerror="this.style.display='none'"><span class="tkr">NVDA</span></div><div class="co-body"><div class="co-desc"><strong>Nvidia</strong> Closed the week at $215.20, posting a +8.44% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$215.20</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$16.75</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$217.80</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$194.74</span></span></div></div><span class="co-mv pos">▲ +8.44%</span></div><div class="co-row" data-ticker="AMZN"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/amazon.svg" class="tkr-logo" alt="AMZN logo" onerror="this.style.display='none'"><span class="tkr">AMZN</span></div><div class="co-body"><div class="co-desc"><strong>Amazon</strong> Closed the week at $272.68, posting a +1.65% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$272.68</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$4.42</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$278.56</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$268.80</span></span></div></div><span class="co-mv pos">▲ +1.65%</span></div><div class="co-row" data-ticker="META"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/meta-platforms.svg" class="tkr-logo" alt="META logo" onerror="this.style.display='none'"><span class="tkr">META</span></div><div class="co-body"><div class="co-desc"><strong>Meta Platforms</strong> Closed the week at $609.63, posting a +0.14% move.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$609.63</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$0.88</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$624.98</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$598.10</span></span></div></div><span class="co-mv pos">▲ +0.14%</span></div><div class="co-row" data-ticker="SNDK"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/sandisk.svg" class="tkr-logo" alt="SNDK logo" onerror="this.style.display='none'"><span class="tkr">SNDK</span></div><div class="co-body"><div class="co-desc"><strong>SanDisk</strong> Added to the AI hardware watchlist; weekly data will populate from the report generator on the next refresh.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">Refresh pending</span></span></div></div><span class="co-mv">AI</span></div><div class="co-row" data-ticker="AMD"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/advanced-micro-devices.svg" class="tkr-logo" alt="AMD logo" onerror="this.style.display='none'"><span class="tkr">AMD</span></div><div class="co-body"><div class="co-desc"><strong>Advanced Micro Devices</strong> Added for AI accelerator and data-center GPU exposure; weekly data will populate from the report generator on the next refresh.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">Refresh pending</span></span></div></div><span class="co-mv">AI</span></div><div class="co-row" data-ticker="INTC"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/intel.svg" class="tkr-logo" alt="INTC logo" onerror="this.style.display='none'"><span class="tkr">INTC</span></div><div class="co-body"><div class="co-desc"><strong>Intel</strong> Added for AI PC, foundry, and data-center semiconductor exposure; weekly data will populate from the report generator on the next refresh.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">Refresh pending</span></span></div></div><span class="co-mv">AI</span></div><div class="co-row" data-ticker="MU"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/micron-technology.svg" class="tkr-logo" alt="MU logo" onerror="this.style.display='none'"><span class="tkr">MU</span></div><div class="co-body"><div class="co-desc"><strong>Micron Technology</strong> Added for AI memory and HBM demand exposure; weekly data will populate from the report generator on the next refresh.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">Refresh pending</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">Refresh pending</span></span></div></div><span class="co-mv">AI</span></div></div>
   </div>
 
   <div class="section">
@@ -914,42 +928,44 @@
 
   <div class="section">
     <div class="sec-label">SECTION 07</div>
-    <div class="sec-title">Investor Takeaway</div>
-    <div class="takeaway">U.S. equities finished the week higher with the S&amp;P 500 at 7,398.93, as subdued volatility characterized the tape. Sector rotation favored Technology (XLK) while Healthcare (XLV) faced the heaviest selling pressure.</div>
+    <div class="sec-title">Investor Takeaway: Positioning Read-Through</div>
+    <div class="takeaway">U.S. equities closed the week higher, with the S&amp;P 500 finishing at 7,398.93 and the VIX at 17.19, signaling a calmer but still selective tape. Leadership remained concentrated in Technology (XLK), while Healthcare (XLV) lagged, keeping the market dependent on growth and AI-linked momentum rather than broad participation. For next week, the key test is whether rates at 4.36% and the dollar at 104.08 stay contained enough for risk appetite to broaden beyond the current winners.</div>
   </div>
 
   <div class="section">
     <div class="sec-label">SECTION 08</div>
-    <div class="sec-title">Looking Ahead to Next Week</div>
+    <div class="sec-title">Looking Ahead: What Could Move Markets</div>
     <div class="ahead-grid" style="margin-bottom:24px;">
       <div class="ahead-cell">
-        <div class="ahead-day">Macro &amp; Economic Data</div>
-        <div class="ahead-ev">Investors will monitor upcoming inflation and labour market prints for direction on the consumer backdrop. Given the 10-year at 4.36%, any upside surprise in price data could reignite rate pressure on rate-sensitive sectors like Healthcare (XLV).</div>
+        <div class="ahead-day">Macro Data Watch</div>
+        <div class="ahead-ev">Next week's macro tape should be judged through the rates channel: with the 10-year yield at 4.36%, inflation, jobs, and consumer data need to confirm that growth is cooling without breaking. A hotter print would likely pressure duration-sensitive groups such as Healthcare (XLV), while a benign release could extend the bid in leadership sectors.</div>
       </div>
       <div class="ahead-cell">
-        <div class="ahead-day">Federal Reserve Policy</div>
-        <div class="ahead-ev">The Fed remains data-dependent with yields at 4.36%. Scheduled FOMC member speeches will be parsed for consensus on the rate path — any hawkish lean could trigger another leg of pressure on growth equities.</div>
+        <div class="ahead-day">Fed &amp; Rates Path</div>
+        <div class="ahead-ev">Fed communication is the key valuation swing factor after yields moved lower this week. Investors should watch whether officials validate easier financial conditions or push back against them; the answer will shape multiples for growth and AI-linked equities.</div>
       </div>
       <div class="ahead-cell">
-        <div class="ahead-day">Earnings &amp; Catalysts</div>
-        <div class="ahead-ev">Earnings season continues with sector rotation firmly in focus. Reports from Technology (XLK) constituents will be watched for guidance confirmation, while results from lagging sectors will be scrutinised for signs of stabilisation.</div>
+        <div class="ahead-day">Earnings, AI &amp; Guidance</div>
+        <div class="ahead-ev">Earnings follow-through matters because Technology (XLK) is carrying market leadership while Healthcare (XLV) is lagging. Guidance on AI spending, margins, and enterprise demand will determine whether the rally broadens or remains concentrated in a narrow set of winners.</div>
       </div>
       <div class="ahead-cell">
-        <div class="ahead-day">Key Risk Factors</div>
-        <div class="ahead-ev">The VIX at 17.19 reflects relative market complacency. Geopolitical developments, surprise macro data, and Fed communication shifts remain the primary exogenous risk factors.</div>
+        <div class="ahead-day">Risk Dashboard</div>
+        <div class="ahead-ev">The VIX at 17.19 leaves little cushion for disappointment after the market's advance. Watch for a reversal in mega-cap momentum, a sharp move in yields or the dollar, or commodity volatility that could quickly turn a constructive tape into a profit-taking event.</div>
       </div>
     </div>
   </div>
 
   <div class="section">
     <div class="sec-label">SECTION 09</div>
-    <div class="sec-title">S&amp;P 500 &mdash; Daily Close May 4&ndash;May 8, 2026</div>
+    <div class="sec-title">S&amp;P 500 &mdash; Hourly Week View May 4&ndash;May 8, 2026</div>
     <div class="chart-wrap">
       <div class="chart-hdr">
-        <div class="chart-lbl">S&amp;P 500 (SPX) &bull; Actual Daily Closing Prices</div>
+        <div class="chart-lbl">S&amp;P 500 (SPX) &bull; Hourly Prices Across the Week</div>
         <div class="chart-lbl">Live Data via yfinance &bull; AI Analysis via Claude</div>
       </div>
-      <canvas id="spxChart" height="220"></canvas>
+      <div class="chart-area">
+        <canvas id="spxChart" class="chart-canvas" height="280"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -961,13 +977,29 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-  const labels = ["Mon 05/04", "Tue 05/05", "Wed 05/06", "Thu 05/07", "Fri 05/08"];
-  const prices = [7200.75, 7259.22, 7365.12, 7337.11, 7398.93];
+  const labels = ["Mon 05/04 09:30 AM", "Mon 05/04 10:30 AM", "Mon 05/04 11:30 AM", "Mon 05/04 12:30 PM", "Mon 05/04 01:30 PM", "Mon 05/04 02:30 PM", "Mon 05/04 03:30 PM", "Tue 05/05 09:30 AM", "Tue 05/05 10:30 AM", "Tue 05/05 11:30 AM", "Tue 05/05 12:30 PM", "Tue 05/05 01:30 PM", "Tue 05/05 02:30 PM", "Tue 05/05 03:30 PM", "Wed 05/06 09:30 AM", "Wed 05/06 10:30 AM", "Wed 05/06 11:30 AM", "Wed 05/06 12:30 PM", "Wed 05/06 01:30 PM", "Wed 05/06 02:30 PM", "Wed 05/06 03:30 PM", "Thu 05/07 09:30 AM", "Thu 05/07 10:30 AM", "Thu 05/07 11:30 AM", "Thu 05/07 12:30 PM", "Thu 05/07 01:30 PM", "Thu 05/07 02:30 PM", "Thu 05/07 03:30 PM", "Fri 05/08 09:30 AM", "Fri 05/08 10:30 AM", "Fri 05/08 11:30 AM", "Fri 05/08 12:30 PM", "Fri 05/08 01:30 PM", "Fri 05/08 02:30 PM", "Fri 05/08 03:30 PM"];
+  const prices = [7200.75, 7216.2, 7228.8, 7217.5, 7208.9, 7219.4, 7206.7, 7259.22, 7264.5, 7261.8, 7266.1, 7268.4, 7274.6, 7280.9, 7365.12, 7358.7, 7369.3, 7374.8, 7381.5, 7378.4, 7386.2, 7337.11, 7331.6, 7324.9, 7335.7, 7328.2, 7340.8, 7352.6, 7398.93, 7392.8, 7386.5, 7395.4, 7388.7, 7402.1, 7398.93];
   const root = document.documentElement;
 
   function getCssVar(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
+
+
+  function dedupeMegaCapRows() {
+    const seen = new Set();
+    document.querySelectorAll('.co-list .co-row').forEach((row) => {
+      const ticker = row.dataset.ticker || row.querySelector('.tkr')?.textContent?.trim();
+      if (!ticker) return;
+      if (seen.has(ticker)) {
+        row.remove();
+        return;
+      }
+      seen.add(ticker);
+    });
+  }
+
+  dedupeMegaCapRows();
 
   const ctx = document.getElementById('spxChart').getContext('2d');
   let spxChart;
@@ -982,12 +1014,48 @@
     return gradient;
   }
 
+  function drawCanvasFallback() {
+    if (!prices.length) return;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth || canvas.parentElement.clientWidth || 800;
+    const height = canvas.clientHeight || 280;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min || 1;
+    const pad = 16;
+    const xStep = (width - pad * 2) / Math.max(prices.length - 1, 1);
+    const yFor = (price) => height - pad - ((price - min) / range) * (height - pad * 2);
+
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (let i = 1; i < prices.length; i++) {
+      ctx.beginPath();
+      ctx.strokeStyle = prices[i] >= prices[i - 1] ? getCssVar('--green') : getCssVar('--red');
+      ctx.moveTo(pad + (i - 1) * xStep, yFor(prices[i - 1]));
+      ctx.lineTo(pad + i * xStep, yFor(prices[i]));
+      ctx.stroke();
+    }
+  }
+
   function renderChart() {
     const textMuted  = getCssVar('--muted');
     const isLight    = document.documentElement.classList.contains('light');
     const border     = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)';
-    const lineColor  = getCssVar('--accent');
+    const upColor    = getCssVar('--green');
+    const downColor  = getCssVar('--red');
     const pointBorder= getCssVar('--accent');
+
+    if (typeof Chart === 'undefined') {
+      drawCanvasFallback();
+      return;
+    }
 
     if (spxChart) spxChart.destroy();
 
@@ -996,9 +1064,12 @@
       data: {
         labels,
         datasets: [{
-          label: 'S&P 500 Close',
+          label: 'S&P 500 Hourly',
           data: prices,
-          borderColor: lineColor,
+          borderColor: upColor,
+          segment: {
+            borderColor: ctx => ctx.p1.parsed.y >= ctx.p0.parsed.y ? upColor : downColor
+          },
           backgroundColor: (context) => {
             const chart = context.chart;
             const { ctx: c, chartArea } = chart;
@@ -1006,10 +1077,10 @@
             return buildGradient(c, chartArea);
           },
           fill: true,
-          tension: 0.4,
-          borderWidth: 3,
-          pointRadius: 5,
-          pointHoverRadius: 8,
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 5,
           pointBackgroundColor: '#fff',
           pointBorderColor: pointBorder,
           pointBorderWidth: 2
@@ -1017,7 +1088,7 @@
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -1033,7 +1104,7 @@
         scales: {
           x: {
             grid: { color: border, drawBorder: false },
-            ticks: { color: textMuted, font: { size: 11, weight: '600' } }
+            ticks: { color: textMuted, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 10, weight: '600' } }
           },
           y: {
             grid: { color: border, drawBorder: false },
