@@ -165,8 +165,9 @@ def generate_lookahead_claude(market_context):
 
     prompt = (
         "You are a senior equity strategist writing the Looking Ahead section of a weekly market summary. "
-        "Write four short paragraphs (2-3 sentences each) for next week. Be specific, analytical, and "
-        "grounded in the data below — do not be generic. Reference actual numbers where relevant.\n\n"
+        "Write four concise, actionable paragraphs (2 sentences each) for next week. Be specific, analytical, "
+        "and grounded in the data below — avoid generic phrases. Include what investors should watch, why it matters, "
+        "and the likely market implication. Reference actual numbers where relevant.\n\n"
         f"This week: S&P 500 {'+' if sp_pct >= 0 else ''}{sp_pct}% WTD, "
         f"VIX {vix:.2f}, 10-yr yield {tnx:.2f}% ({'+' if tnx_pct >= 0 else ''}{tnx_pct}% WTD), "
         f"DXY {dxy:.2f} ({'+' if dxy_pct >= 0 else ''}{dxy_pct}% WTD), "
@@ -180,25 +181,25 @@ def generate_lookahead_claude(market_context):
     )
     fallback = {
         "macro": (
-            f"Investors will monitor upcoming inflation and labour market prints for direction on the "
-            f"consumer backdrop. Given the 10-year at {tnx:.2f}%, any upside surprise in price data "
-            f"could reignite rate pressure on rate-sensitive sectors like {bot1}."
+            f"Next week's macro tape should be judged through the rates channel: with the 10-year yield at {tnx:.2f}%, "
+            f"inflation, jobs, and consumer data need to confirm that growth is cooling without breaking. A hotter print "
+            f"would likely pressure duration-sensitive groups such as {bot1}, while a benign release could extend the bid "
+            f"in leadership sectors."
         ),
         "fed_policy": (
-            f"The Fed remains data-dependent with yields at {tnx:.2f}%. Scheduled FOMC member speeches "
-            f"will be parsed for consensus on the rate path — any hawkish lean could trigger another "
-            f"leg of pressure on growth equities."
+            f"Fed communication is the key valuation swing factor after the 10-year yield moved {'higher' if tnx_pct >= 0 else 'lower'} "
+            f"by {abs(tnx_pct):.2f}% this week. Investors should watch whether officials validate easier financial conditions or push back "
+            f"against them; the answer will shape multiples for growth and AI-linked equities."
         ),
         "earnings_and_catalysts": (
-            f"Earnings season continues with sector rotation firmly in focus. Reports from {top1} "
-            f"constituents will be watched for guidance confirmation, while results from lagging "
-            f"sectors will be scrutinised for signs of stabilisation."
+            f"Earnings follow-through matters because {top1} is carrying market leadership while {bot1} is lagging. Guidance on AI spending, "
+            f"margins, and enterprise demand will determine whether the rally broadens or remains concentrated in a narrow set of winners."
         ),
         "risk_factors": (
-            ("The VIX at " + f"{vix:.2f}" + " signals elevated tail risk heading into next week."
-             if vix >= 20 else "The VIX at " + f"{vix:.2f}" + " reflects relative market complacency.")
-            + f" Geopolitical developments, surprise macro data, and Fed communication shifts "
-              "remain the primary exogenous risk factors."
+            ("The VIX at " + f"{vix:.2f}" + " signals that investors are still paying up for downside protection."
+             if vix >= 20 else "The VIX at " + f"{vix:.2f}" + " leaves little cushion for disappointment.")
+            + f" Watch for a reversal in mega-cap momentum, a sharp move in yields or the dollar, or commodity volatility that could "
+              "quickly turn a constructive tape into a profit-taking event."
         ),
     }
     result = claude_json(
@@ -490,8 +491,8 @@ def generate_html():
     takeaway_prompt = (
         "You are a senior equity strategist writing the Investor Takeaway for a weekly market summary. "
         "Write exactly 3 sentences — sharp, analytical, institutional in tone. No bullet points. No headers. "
-        "Synthesize the data below into a coherent narrative about what actually happened this week and what it means. "
-        "Do not be generic. Reference specific numbers.\n"
+        "Synthesize what happened, why it happened, and what it implies for positioning next week. "
+        "Do not be generic. Reference specific numbers, sector leadership/laggards, volatility, and rates where relevant.\n"
         f"S&P 500: {sp['end_price']:,.2f} ({'+' if sp_pct >= 0 else ''}{sp_pct}% WTD)\n"
         f"Nasdaq: {nd['end_price']:,.2f} ({'+' if nd['pct_change'] >= 0 else ''}{nd['pct_change']}% WTD)\n"
         f"DJIA: {dj['end_price']:,.2f} ({'+' if dj['pct_change'] >= 0 else ''}{dj['pct_change']}% WTD)\n"
@@ -507,9 +508,12 @@ def generate_html():
         f"Euro Stoxx 50: {'+' if stoxx['pct_change'] >= 0 else ''}{stoxx['pct_change']}% WTD"
     )
     takeaway_fallback = (
-        f"U.S. equities finished the week {direction} with the S&amp;P 500 at {sp['end_price']:,.2f}, "
-        f"as {vix_note} characterized the tape. "
-        f"Sector rotation favored {top_sectors[0][0]} while {bottom_sectors[0][0]} faced the heaviest selling pressure."
+        f"U.S. equities closed the week {direction}, with the S&amp;P 500 finishing at {sp['end_price']:,.2f} "
+        f"and the VIX at {vix_close:.2f}, signaling {vix_note}. "
+        f"Leadership remained selective: {top_sectors[0][0]} led the tape while {bottom_sectors[0][0]} lagged, "
+        f"keeping the market dependent on growth and AI-linked momentum rather than broad participation. "
+        f"For next week, the key test is whether rates at {tnx['end_price']:.2f}% and the dollar at {dxy['end_price']:.2f} "
+        f"stay contained enough for risk appetite to broaden beyond the current winners."
     )
     takeaway_text = claude(takeaway_prompt, max_tokens=400, fallback=takeaway_fallback)
 
@@ -1491,28 +1495,28 @@ def generate_html():
 
   <div class="section">
     <div class="sec-label">SECTION 07</div>
-    <div class="sec-title">Investor Takeaway</div>
+    <div class="sec-title">Investor Takeaway: Positioning Read-Through</div>
     <div class="takeaway">{takeaway_text}</div>
   </div>
 
   <div class="section">
     <div class="sec-label">SECTION 08</div>
-    <div class="sec-title">Looking Ahead to Next Week</div>
+    <div class="sec-title">Looking Ahead: What Could Move Markets</div>
     <div class="ahead-grid" style="margin-bottom:24px;">
       <div class="ahead-cell">
-        <div class="ahead-day">Macro &amp; Economic Data</div>
+        <div class="ahead-day">Macro Data Watch</div>
         <div class="ahead-ev">{lookahead['macro']}</div>
       </div>
       <div class="ahead-cell">
-        <div class="ahead-day">Federal Reserve Policy</div>
+        <div class="ahead-day">Fed &amp; Rates Path</div>
         <div class="ahead-ev">{lookahead['fed_policy']}</div>
       </div>
       <div class="ahead-cell">
-        <div class="ahead-day">Earnings &amp; Catalysts</div>
+        <div class="ahead-day">Earnings, AI &amp; Guidance</div>
         <div class="ahead-ev">{lookahead['earnings_and_catalysts']}</div>
       </div>
       <div class="ahead-cell">
-        <div class="ahead-day">Key Risk Factors</div>
+        <div class="ahead-day">Risk Dashboard</div>
         <div class="ahead-ev">{lookahead['risk_factors']}</div>
       </div>
     </div>
