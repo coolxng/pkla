@@ -88,6 +88,22 @@ def fetch_weekly_data(ticker_symbol):
             "abs_change": 0.0, "prev_close": 0.0, "week_high": 0.0, "week_low": 0.0,
             "ticker_used": ticker_symbol, "error": f"Data unavailable for {ticker_symbol}"}
 
+def fetch_weekly_chart_data(ticker_symbol):
+    """Fetch hourly price points for the chart while keeping daily data for summary stats."""
+    try:
+        ticker = yf.Ticker(ticker_symbol)
+        hist = ticker.history(period="5d", interval="1h")
+        if len(hist) < 2:
+            raise ValueError("Not enough hourly data returned")
+        hist = hist.dropna(subset=["Close"])
+        dates = [d.strftime('%a %m/%d %I:%M %p') for d in hist.index]
+        closes = [round(float(v), 2) for v in hist['Close'].tolist()]
+        return {"dates": dates, "closes": closes, "error": None}
+    except Exception as e:
+        print(f"  Exception fetching hourly chart data for {ticker_symbol}: {e} — using daily chart fallback")
+        fallback = fetch_weekly_data(ticker_symbol)
+        return {"dates": fallback["dates"], "closes": fallback["closes"], "error": fallback.get("error")}
+
 # ─────────────────────────────────────────────
 # CLAUDE API HELPERS
 # ─────────────────────────────────────────────
@@ -517,8 +533,9 @@ def generate_html():
     top_tags = "".join(f'<span class="tag g">{s[0]} ({chr(43) if s[1] >= 0 else ""}{s[1]}%)</span>' for s in top_sectors)
     bot_tags = "".join(f'<span class="tag r">{s[0]} ({chr(43) if s[1] >= 0 else ""}{s[1]}%)</span>' for s in bottom_sectors)
 
-    sp_dates = sp["dates"]
-    sp_data  = sp["closes"]
+    sp_chart = fetch_weekly_chart_data("^GSPC")
+    sp_dates = sp_chart["dates"]
+    sp_data  = sp_chart["closes"]
 
     # Global market table rows (Section 06)
     def global_row(name, data, status_text):
@@ -1272,7 +1289,7 @@ def generate_html():
 
   .chart-wrap {{
     background: var(--surface);
-    padding: 32px;
+    padding: 24px 28px;
     border-radius: 20px;
     box-shadow: var(--shadow-dark);
   }}
@@ -1281,9 +1298,13 @@ def generate_html():
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     gap: 12px;
     flex-wrap: wrap;
+  }}
+
+  .chart-canvas {{
+    height: 170px;
   }}
 
   .chart-lbl {{
@@ -1485,13 +1506,13 @@ def generate_html():
 
   <div class="section">
     <div class="sec-label">SECTION 09</div>
-    <div class="sec-title">S&amp;P 500 &mdash; Daily Close {week_start_str}&ndash;{today_str}, {year_str}</div>
+    <div class="sec-title">S&amp;P 500 &mdash; Hourly Week View {week_start_str}&ndash;{today_str}, {year_str}</div>
     <div class="chart-wrap">
       <div class="chart-hdr">
-        <div class="chart-lbl">S&amp;P 500 (SPX) &bull; Actual Daily Closing Prices</div>
+        <div class="chart-lbl">S&amp;P 500 (SPX) &bull; Hourly Prices Across the Week</div>
         <div class="chart-lbl">Live Data via yfinance &bull; AI Analysis via Claude</div>
       </div>
-      <canvas id="spxChart" height="220"></canvas>
+      <canvas id="spxChart" class="chart-canvas"></canvas>
     </div>
   </div>
 </div>
@@ -1528,7 +1549,8 @@ def generate_html():
     const textMuted  = getCssVar('--muted');
     const isLight    = document.documentElement.classList.contains('light');
     const border     = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)';
-    const lineColor  = getCssVar('--accent');
+    const upColor    = getCssVar('--green');
+    const downColor  = getCssVar('--red');
     const pointBorder= getCssVar('--accent');
 
     if (spxChart) spxChart.destroy();
@@ -1538,9 +1560,12 @@ def generate_html():
       data: {{
         labels,
         datasets: [{{
-          label: 'S&P 500 Close',
+          label: 'S&P 500 Hourly',
           data: prices,
-          borderColor: lineColor,
+          borderColor: upColor,
+          segment: {{
+            borderColor: ctx => ctx.p1.parsed.y >= ctx.p0.parsed.y ? upColor : downColor
+          }},
           backgroundColor: (context) => {{
             const chart = context.chart;
             const {{ ctx: c, chartArea }} = chart;
@@ -1548,10 +1573,10 @@ def generate_html():
             return buildGradient(c, chartArea);
           }},
           fill: true,
-          tension: 0.4,
-          borderWidth: 3,
-          pointRadius: 5,
-          pointHoverRadius: 8,
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 5,
           pointBackgroundColor: '#fff',
           pointBorderColor: pointBorder,
           pointBorderWidth: 2
@@ -1559,7 +1584,7 @@ def generate_html():
       }},
       options: {{
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {{
           legend: {{ display: false }},
           tooltip: {{
@@ -1575,7 +1600,7 @@ def generate_html():
         scales: {{
           x: {{
             grid: {{ color: border, drawBorder: false }},
-            ticks: {{ color: textMuted, font: {{ size: 11, weight: '600' }} }}
+            ticks: {{ color: textMuted, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: {{ size: 10, weight: '600' }} }}
           }},
           y: {{
             grid: {{ color: border, drawBorder: false }},
