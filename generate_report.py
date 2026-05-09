@@ -306,7 +306,17 @@ def generate_html():
 
     # Claude: mega-cap descriptions
     print("Generating mega-cap descriptions via Claude...")
-    megacaps = {"AAPL": "Apple", "MSFT": "Microsoft", "NVDA": "Nvidia", "AMZN": "Amazon", "META": "Meta Platforms"}
+    megacaps = {
+        "AAPL": "Apple",
+        "MSFT": "Microsoft",
+        "NVDA": "Nvidia",
+        "AMZN": "Amazon",
+        "META": "Meta Platforms",
+        "SNDK": "SanDisk",
+        "AMD": "Advanced Micro Devices",
+        "INTC": "Intel",
+        "MU": "Micron Technology",
+    }
     megacap_data = {tk: {"name": name, "result": fetch_weekly_data(tk)} for tk, name in megacaps.items()}
     mc_lines = "\n".join(
         f"- {tk} ({v['name']}) closed at ${v['result']['end_price']:,.2f}, "
@@ -327,7 +337,7 @@ def generate_html():
         tk: f"Closed the week at ${v['result']['end_price']:,.2f}, posting a {'+' if v['result']['pct_change'] >= 0 else ''}{v['result']['pct_change']}% move."
         for tk, v in megacap_data.items()
     }
-    mc_descriptions = claude_json(mc_prompt, required_keys=set(megacap_data.keys()), max_tokens=500, fallback=mc_fallback)
+    mc_descriptions = claude_json(mc_prompt, required_keys=set(megacap_data.keys()), max_tokens=900, fallback=mc_fallback)
 
     # TradingView stock logos
     # Pattern: https://s3-symbol-logo.tradingview.com/{slug}.svg
@@ -337,6 +347,10 @@ def generate_html():
         "NVDA": "nvidia",
         "AMZN": "amazon",
         "META": "meta-platforms",
+        "SNDK": "sandisk",
+        "AMD": "advanced-micro-devices",
+        "INTC": "intel",
+        "MU": "micron-technology",
     }
     megacap_html = ""
     for tk, v in megacap_data.items():
@@ -1414,8 +1428,8 @@ def generate_html():
 
   <div class="section">
     <div class="sec-label">SECTION 04</div>
-    <div class="sec-title">Mega-Cap Tech &amp; Key Movers</div>
-    <div class="sec-intro">The five largest U.S. mega-cap tech constituents drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
+    <div class="sec-title">Mega-Cap Tech &amp; AI Semiconductor Movers</div>
+    <div class="sec-intro">Mega-cap platform companies and AI-linked semiconductor names drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
     <div class="co-list">{megacap_html}</div>
   </div>
 
