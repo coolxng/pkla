@@ -1307,23 +1307,18 @@ def generate_html():
     flex-wrap: wrap;
   }}
 
-codex/add-ai-stocks-to-existing-list-5r9c2x
   .chart-area {{
     position: relative;
-    height: 170px;
-    max-height: 170px;
+    height: 280px;
+    max-height: 280px;
     overflow: hidden;
   }}
 
   .chart-canvas {{
     display: block;
     width: 100% !important;
-    height: 170px !important;
-    max-height: 170px !important;
-
-  .chart-canvas {{
-    height: 170px;
-main
+    height: 280px !important;
+    max-height: 280px !important;
   }}
 
   .chart-lbl {{
@@ -1532,9 +1527,8 @@ main
         <div class="chart-lbl">Live Data via yfinance &bull; AI Analysis via Claude</div>
       </div>
       <div class="chart-area">
-        <canvas id="spxChart" class="chart-canvas" height="170"></canvas>
+        <canvas id="spxChart" class="chart-canvas" height="280"></canvas>
       </div>
-      <canvas id="spxChart" class="chart-canvas"></canvas>
     </div>
   </div>
 </div>
@@ -1587,7 +1581,7 @@ main
     const canvas = ctx.canvas;
     const dpr = window.devicePixelRatio || 1;
     const width = canvas.clientWidth || canvas.parentElement.clientWidth || 800;
-    const height = canvas.clientHeight || 170;
+    const height = canvas.clientHeight || 280;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
