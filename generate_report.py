@@ -9,7 +9,7 @@ import urllib.request
 # ─────────────────────────────────────────────
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-ANTHROPIC_MODEL   = "claude-3-5-sonnet-20241022"
+ANTHROPIC_MODEL   = "claude-sonnet-4-6"
 
 SANITY_BOUNDS = {
     "GC=F":      (1000, 8000),
